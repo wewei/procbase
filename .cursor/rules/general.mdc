@@ -1,5 +1,250 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# General Development Rules
+
+This document defines general development practices and policies for this project.
+
+## Lock Files
+
+### ✅ Always Check In Lock Files
+**Always commit lock files to version control:**
+
+- `bun.lock` - **MUST** be committed
+- `package-lock.json` - **MUST** be committed (if using npm)
+- `yarn.lock` - **MUST** be committed (if using yarn)
+- `pnpm-lock.yaml` - **MUST** be committed (if using pnpm)
+
+### Why Lock Files Are Important
+
+1. **Reproducible Builds**
+   - Ensures all developers and CI/CD systems use identical dependency versions
+   - Prevents "works on my machine" issues
+   - Guarantees consistent behavior across environments
+
+2. **Security**
+   - Locks dependencies to specific versions with known security status
+   - Prevents supply chain attacks through dependency hijacking
+   - Allows security audits of exact dependency versions
+
+3. **Performance**
+   - Faster installs by skipping dependency resolution
+   - Reduces network requests during `bun install`
+   - Improves CI/CD build times
+
+4. **Team Consistency**
+   - All team members use identical dependency versions
+   - Reduces debugging time for dependency-related issues
+   - Ensures consistent behavior in production
+
+### Lock File Management
+
+#### When to Update Lock Files
+- **Automatically**: When running `bun add`, `bun remove`, or `bun update`
+- **Manually**: When updating `package.json` dependencies
+- **Security**: When applying security patches
+
+#### Commit Messages for Lock Files
+```bash
+# Good commit messages for lock file updates
+git commit -m "chore: update bun.lock for security patches"
+git commit -m "chore: update dependencies and lock file"
+git commit -m "chore: add bun.lock to version control"
+```
+
+#### What NOT to Do
+- ❌ **Never** add lock files to `.gitignore`
+- ❌ **Never** manually edit lock files
+- ❌ **Never** commit lock files with unrelated changes
+
+## Dependency Management
+
+### Adding Dependencies
+```bash
+# Add production dependency
+bun add package-name
+
+# Add development dependency
+bun add -d package-name
+
+# Add specific version
+bun add package-name@1.2.3
+```
+
+### Updating Dependencies
+```bash
+# Update all dependencies
+bun update
+
+# Update specific package
+bun update package-name
+
+# Update to latest major version (use with caution)
+bun update package-name@latest
+```
+
+### Security Audits
+```bash
+# Check for security vulnerabilities
+bun audit
+
+# Fix security issues automatically
+bun audit --fix
+```
+
+## Version Control
+
+### Commit Guidelines
+- Use conventional commit format: `type(scope): description`
+- Keep commits focused and atomic
+- Write descriptive commit messages
+- Reference issues when applicable
+
+### Branch Naming
+- `main` - Production-ready code
+- `develop` - Development branch
+- `feature/feature-name` - New features
+- `fix/bug-description` - Bug fixes
+- `chore/task-description` - Maintenance tasks
+
+### Pull Request Guidelines
+- Create descriptive PR titles
+- Include detailed descriptions
+- Reference related issues
+- Request reviews from appropriate team members
+- Ensure CI/CD passes before merging
+
+## Code Quality
+
+### Pre-commit Checks
+- Run TypeScript compilation: `bun run tsc --noEmit`
+- Run linting: `bun run lint` (if configured)
+- Run tests: `bun run test` (if configured)
+- Check for security issues: `bun audit`
+
+### Code Review Checklist
+- [ ] Code follows project conventions
+- [ ] Tests are included and passing
+- [ ] Documentation is updated
+- [ ] No security vulnerabilities introduced
+- [ ] Performance impact considered
+- [ ] Error handling is appropriate
+
+## Environment Setup
+
+### Required Tools
+- **Bun** - JavaScript runtime and package manager
+- **TypeScript** - Type checking and compilation
+- **Git** - Version control
+
+### Development Environment
+```bash
+# Install dependencies
+bun install
+
+# Run development server
+bun run dev
+
+# Build for production
+bun run build
+
+# Run tests
+bun run test
+```
+
+### Environment Variables
+- Use `.env.local` for local development
+- Use `.env.example` as a template
+- **Never** commit sensitive environment variables
+- Document all required environment variables
+
+## Documentation
+
+### Required Documentation
+- **README.md** - Project overview and setup
+- **API documentation** - For libraries and APIs
+- **Architecture decisions** - For complex design choices
+- **Deployment guides** - For production deployment
+
+### Documentation Standards
+- Keep documentation up to date with code changes
+- Use clear, concise language
+- Include examples and code snippets
+- Maintain consistent formatting
+
+## Security
+
+### General Security Practices
+- Never commit secrets or sensitive data
+- Use environment variables for configuration
+- Regularly update dependencies for security patches
+- Follow the principle of least privilege
+- Validate and sanitize all inputs
+
+### Dependency Security
+- Regularly run `bun audit`
+- Keep dependencies updated
+- Review security advisories for used packages
+- Consider using `bun audit --fix` for automatic fixes
+
+## Performance
+
+### General Performance Guidelines
+- Optimize bundle size
+- Minimize network requests
+- Use appropriate caching strategies
+- Profile and monitor performance
+- Consider lazy loading for large dependencies
+
+### Build Performance
+- Use appropriate TypeScript configuration
+- Minimize unnecessary dependencies
+- Consider using Bun's built-in bundler
+- Profile build times and optimize bottlenecks
+
+## Testing
+
+### Testing Strategy
+- Write unit tests for business logic
+- Include integration tests for critical paths
+- Use appropriate testing frameworks
+- Maintain good test coverage
+- Test error conditions and edge cases
+
+### Test Guidelines
+- Tests should be fast and reliable
+- Use descriptive test names
+- Follow AAA pattern (Arrange, Act, Assert)
+- Mock external dependencies appropriately
+- Keep tests focused and atomic
+
+## Deployment
+
+### Deployment Checklist
+- [ ] All tests pass
+- [ ] Security audit passes
+- [ ] Documentation is updated
+- [ ] Environment variables are configured
+- [ ] Monitoring and logging are set up
+- [ ] Rollback plan is prepared
+
+### Production Considerations
+- Use appropriate environment configurations
+- Set up monitoring and alerting
+- Configure proper logging
+- Plan for scalability
+- Document deployment procedures
+
+## Summary
+
+These general rules ensure:
+- **Consistency** across the development team
+- **Security** through proper dependency management
+- **Reliability** through reproducible builds
+- **Quality** through proper testing and review processes
+- **Maintainability** through good documentation and practices
+
+Follow these guidelines to maintain a healthy, secure, and efficient development process.
+
