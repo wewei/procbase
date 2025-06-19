@@ -1,0 +1,47 @@
+================================================================================
+Tree Shaking 分析报告
+================================================================================
+
+📊 统计信息:
+  总符号数: 24
+  保留符号数: 1
+  移除符号数: 24
+  移除率: 100%
+
+🚀 入口点:
+  - bin/index.ts:runAnalysis
+
+✅ 保留的符号:
+  📁 bin/index.ts:
+    - runAnalysis
+
+❌ 未使用的符号:
+  📁 bin/ts-inspect/TreeShakingReporter.ts:
+    - DependencyGraphOptions (any)
+    - ImpactAnalysis (any)
+    - generateDetailedReport ((result: TreeShakingResult) => string)
+    - generateSummaryReport ((result: TreeShakingResult) => string)
+    - generateJSONReport ((result: TreeShakingResult) => string)
+    - generateDependencyGraph ((result: TreeShakingResult, options?: DependencyGraphOptions) => string)
+    - generateMarkdownReport ((result: TreeShakingResult) => string)
+    - findCircularDependencies ((symbolTable: ProjectSymbolTableState) => string[][])
+    - calculateImpactAnalysis ((symbolName: string, symbolTable: ProjectSymbolTableState) => ImpactAnalysis)
+    - findLargestSymbols ((symbolTable: ProjectSymbolTableState, limit?: number) => { symbol: string; dependencyCount: number; }[])
+    - generateAdjacencyListReport ((result: TreeShakingResult) => string)
+
+  📁 bin/ts-inspect/index.ts:
+    - CLIOptions (any)
+    - ReportFormat (any)
+    - runAnalysis ((options: CLIOptions) => Promise<void>)
+    - parseArgs ((args: string[]) => CLIOptions)
+    - printHelp (() => void)
+    - runExample (() => Promise<void>)
+    - saveReports ((result: TreeShakingResult, outputPath: string, formats: ReportFormat[]) => Promise<void>)
+
+  📁 storage/SemanticDB.ts:
+    - SemanticSearchResult (any)
+    - SemanticSearchQuery (any)
+    - SemanticIndex (any)
+    - EntryStore (any)
+    - SemanticDB (any)
+    - makeSemanticDB (<Embedding, Entry extends Record<string, any>>({ makeSemanticIndex, makeEntryStore, embedEntry, }: { makeSemanticIndex: () => Promise<SemanticIndex<Embedding>>; makeEntryStore: () => Promise<EntryStore<Entry>>; embedEntry: (entry: Entry) => Promise<...>; }) => Promise<...>)

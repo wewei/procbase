@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import path from 'node:path';
 import type { SymbolInfo, ImportInfo, ExtractedSymbols, SourceLocation } from './SymbolTable';
 
 /**
@@ -406,8 +407,6 @@ const findSymbolDependencies = (
   sourceFile: ts.SourceFile
 ): Set<string> => {
   const dependencies = new Set<string>();
-  const allSymbols = new Map(Array.from(symbols.exports).concat(Array.from(symbols.internal)));
-  const allImports = new Map(Array.from(symbols.imports));
 
   const visit = (node: ts.Node) => {
     // 查找标识符引用
@@ -415,9 +414,52 @@ const findSymbolDependencies = (
       const symbol = typeChecker.getSymbolAtLocation(node);
       if (symbol) {
         const symbolName = symbol.getName();
-        // 检查是否是本地符号或导入符号
-        if (allSymbols.has(symbolName) || allImports.has(symbolName)) {
-          dependencies.add(`${sourceFile.fileName}:${symbolName}`);
+        
+        // 检查是否是导入的符号
+        if (symbols.imports.has(symbolName)) {
+          // 对于导入的符号，我们需要找到它们的实际定义
+          const importInfo = symbols.imports.get(symbolName)!;
+          console.log(`   找到导入符号: ${symbolName} from ${importInfo.moduleSpecifier}`);
+          
+          // 尝试解析模块路径
+          const modulePath = importInfo.moduleSpecifier;
+          if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
+            // 相对路径导入，尝试找到对应的文件
+            const resolvedPath = resolveRelativePath(sourceFile.fileName, modulePath);
+            console.log(`   解析路径: ${sourceFile.fileName} + ${modulePath} = ${resolvedPath}`);
+            
+            // 检查是否在全局符号表中
+            const globalSymbols = typeChecker.getSymbolsInScope(node, ts.SymbolFlags.All);
+            globalSymbols.forEach(globalSymbol => {
+              if (globalSymbol.getName() === symbolName) {
+                const declarations = globalSymbol.getDeclarations();
+                if (declarations && declarations.length > 0) {
+                  const declaration = declarations[0];
+                  if (declaration) {
+                    const fileName = declaration.getSourceFile().fileName;
+                    console.log(`   找到全局符号: ${fileName}:${symbolName}`);
+                    if (fileName !== sourceFile.fileName) {
+                      dependencies.add(`${fileName}:${symbolName}`);
+                    }
+                  }
+                }
+              }
+            });
+          }
+        }
+        
+        // 获取符号的实际声明位置
+        const declarations = symbol.getDeclarations();
+        if (declarations && declarations.length > 0) {
+          const declaration = declarations[0];
+          if (declaration) {
+            const fileName = declaration.getSourceFile().fileName;
+            console.log(`   符号 ${symbolName} 声明在: ${fileName}`);
+            // 只添加非当前文件的依赖，避免自引用
+            if (fileName !== sourceFile.fileName) {
+              dependencies.add(`${fileName}:${symbolName}`);
+            }
+          }
         }
       }
     }
@@ -428,8 +470,17 @@ const findSymbolDependencies = (
         const symbol = typeChecker.getSymbolAtLocation(node.typeName);
         if (symbol) {
           const symbolName = symbol.getName();
-          if (allSymbols.has(symbolName) || allImports.has(symbolName)) {
-            dependencies.add(`${sourceFile.fileName}:${symbolName}`);
+          // 获取符号的实际声明位置
+          const declarations = symbol.getDeclarations();
+          if (declarations && declarations.length > 0) {
+            const declaration = declarations[0];
+            if (declaration) {
+              const fileName = declaration.getSourceFile().fileName;
+              // 只添加非当前文件的依赖，避免自引用
+              if (fileName !== sourceFile.fileName) {
+                dependencies.add(`${fileName}:${symbolName}`);
+              }
+            }
           }
         }
       }
@@ -441,4 +492,22 @@ const findSymbolDependencies = (
 
   visit(node);
   return dependencies;
+};
+
+/**
+ * 解析相对路径
+ * @param baseFile - 基础文件路径
+ * @param relativePath - 相对路径
+ * @returns 解析后的绝对路径
+ */
+const resolveRelativePath = (baseFile: string, relativePath: string): string => {
+  const baseDir = path.dirname(baseFile);
+  const resolved = path.resolve(baseDir, relativePath);
+  
+  // 添加 .ts 扩展名如果不存在
+  if (!resolved.endsWith('.ts') && !resolved.endsWith('.js')) {
+    return resolved + '.ts';
+  }
+  
+  return resolved;
 };

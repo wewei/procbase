@@ -361,3 +361,43 @@ export const findLargestSymbols = (
     .sort((a, b) => b.dependencyCount - a.dependencyCount)
     .slice(0, limit);
 };
+
+/**
+ * 生成依赖关系邻接表报告
+ * @param result - Tree shaking分析结果
+ * @returns 邻接表格式的依赖报告字符串
+ */
+export const generateAdjacencyListReport = (result: TreeShakingResult): string => {
+  const lines: string[] = [];
+  
+  lines.push('依赖关系邻接表');
+  lines.push('='.repeat(80));
+  lines.push('');
+
+  // 遍历所有符号
+  result.includedSymbols.forEach(symbolName => {
+    const symbolInfo = getSymbol(result.symbolTable, symbolName);
+    if (!symbolInfo) return;
+    
+    // 获取符号的简短名称（不包含文件路径）
+    const shortName = symbolName.split(':')[1];
+    
+    // 获取依赖的符号的简短名称
+    const dependencies = Array.from(symbolInfo.dependencies)
+      .map(dep => dep.split(':')[1])
+      .sort();
+    
+    // 输出邻接表条目
+    lines.push(`${shortName}:`);
+    if (dependencies.length > 0) {
+      dependencies.forEach(dep => {
+        lines.push(`  - ${dep}`);
+      });
+    } else {
+      lines.push('  (无依赖)');
+    }
+    lines.push('');
+  });
+  
+  return lines.join('\n');
+};

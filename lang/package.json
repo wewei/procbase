@@ -1,0 +1,17 @@
+{
+  "name": "@procbase/lang",
+  "version": "1.0.0",
+  "description": "TypeScript 语言分析模块",
+  "main": "index.ts",
+  "scripts": {
+    "test": "bun test",
+    "test:simple": "bun run __tests__/SymbolExtractor.simple.test.ts",
+    "test:deps": "bun run __tests__/DependencyTest.ts"
+  },
+  "dependencies": {
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+} 

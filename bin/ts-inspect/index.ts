@@ -14,6 +14,7 @@ import {
   generateJSONReport, 
   generateMarkdownReport, 
   generateDependencyGraph,
+  generateAdjacencyListReport,
   findCircularDependencies,
   findLargestSymbols
 } from './TreeShakingReporter';
@@ -30,13 +31,14 @@ export type CLIOptions = {
   checkCircular: boolean;
   showLargest: boolean;
   strict: boolean;
+  graph: boolean;
   compilerOptions?: any;
 };
 
 /**
  * 报告格式
  */
-export type ReportFormat = 'text' | 'json' | 'markdown' | 'dot';
+export type ReportFormat = 'text' | 'json' | 'markdown' | 'dot' | 'graph';
 
 /**
  * 运行分析
@@ -86,6 +88,12 @@ export const runAnalysis = async (options: CLIOptions): Promise<void> => {
     // 显示简要报告
     console.log(generateSummaryReport(result));
     console.log('');
+
+    // 如果指定了 --graph 选项，显示依赖关系邻接表
+    if (options.graph) {
+      console.log(generateAdjacencyListReport(result));
+      console.log('');
+    }
 
     // 保存报告
     if (options.output && options.output.trim()) {
@@ -167,6 +175,10 @@ const saveReports = async (
         content = generateDependencyGraph(result);
         extension = '.dot';
         break;
+      case 'graph':
+        content = generateAdjacencyListReport(result);
+        extension = '.graph';
+        break;
       default:
         continue;
     }
@@ -192,7 +204,8 @@ export const parseArgs = (args: string[]): CLIOptions => {
     format: ['text'],
     checkCircular: false,
     showLargest: false,
-    strict: false
+    strict: false,
+    graph: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -237,6 +250,9 @@ export const parseArgs = (args: string[]): CLIOptions => {
       case '--strict':
         options.strict = true;
         break;
+      case '--graph':
+        options.graph = true;
+        break;
       case '--help':
       case '-h':
         printHelp();
@@ -263,16 +279,18 @@ export const printHelp = (): void => {
   -f, --files <files>          指定要分析的文件列表（逗号分隔）
   -e, --entry <symbols>        指定入口点符号（逗号分隔）
   -o, --output <path>          指定输出文件路径
-  --format <formats>           指定输出格式（text,json,markdown,dot）
+  --format <formats>           指定输出格式（text,json,markdown,dot,graph）
   --check-circular             检查循环依赖
   --show-largest               显示依赖最多的符号
   --strict                     严格模式（不允许编译错误）
+  --graph                      输出依赖关系邻接表
   -h, --help                   显示帮助信息
 
 示例:
   ts-inspect --config tsconfig.json --entry main,utils --output report
   ts-inspect --files src/main.ts,src/utils.ts --entry main --format json,markdown
   ts-inspect --config tsconfig.json --check-circular --show-largest
+  ts-inspect --config tsconfig.json --entry main --format graph --output dependencies
 `);
 };
 
@@ -289,7 +307,8 @@ export const runExample = async (): Promise<void> => {
     format: ['text'],
     checkCircular: false,
     showLargest: false,
-    strict: false
+    strict: false,
+    graph: false
   };
   
   try {
