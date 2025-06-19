@@ -258,45 +258,46 @@ const handleImportDeclaration = (
   symbols: ExtractedSymbols,
   sourceFile: ts.SourceFile
 ): void => {
-  const moduleSpecifier = (importDecl.moduleSpecifier as ts.StringLiteral).text;
-  
+  if (!importDecl.moduleSpecifier || !ts.isStringLiteral(importDecl.moduleSpecifier)) {
+    return;
+  }
+
+  const modulePath = importDecl.moduleSpecifier.text;
+  const resolvedPath = resolveRelativePath(sourceFile.fileName, modulePath);
+
   if (importDecl.importClause) {
-    // 默认导入: import Foo from 'module'
+    // 处理默认导入
     if (importDecl.importClause.name) {
-      symbols.imports.set(importDecl.importClause.name.text, {
+      const defaultImport: ImportInfo = {
         name: importDecl.importClause.name.text,
-        moduleSpecifier,
-        importType: 'default',
-        originalName: 'default',
-        fileName: sourceFile.fileName
-      });
+        fromModule: resolvedPath,
+        isDefault: true
+      };
+      symbols.imports.set(defaultImport.name, defaultImport);
     }
-    
-    // 命名导入和命名空间导入
-    if (importDecl.importClause.namedBindings) {
-      if (ts.isNamedImports(importDecl.importClause.namedBindings)) {
-        // 命名导入: import { a, b as c } from 'module'
-        importDecl.importClause.namedBindings.elements.forEach(element => {
-          const localName = element.name.text;
-          const originalName = element.propertyName?.text ?? localName;
-          
-          symbols.imports.set(localName, {
-            name: localName,
-            moduleSpecifier,
-            importType: 'named',
-            originalName,
-            fileName: sourceFile.fileName
-          });
+
+    // 处理命名导入
+    const namedBindings = importDecl.importClause.namedBindings;
+    if (namedBindings) {
+      if (ts.isNamedImports(namedBindings)) {
+        namedBindings.elements.forEach(element => {
+          const importInfo: ImportInfo = {
+            name: element.name.text,
+            fromModule: resolvedPath,
+            isDefault: false,
+            originalName: element.propertyName?.text || element.name.text
+          };
+          symbols.imports.set(importInfo.name, importInfo);
         });
-      } else if (ts.isNamespaceImport(importDecl.importClause.namedBindings)) {
-        // 命名空间导入: import * as ns from 'module'
-        symbols.imports.set(importDecl.importClause.namedBindings.name.text, {
-          name: importDecl.importClause.namedBindings.name.text,
-          moduleSpecifier,
-          importType: 'namespace',
-          originalName: '*',
-          fileName: sourceFile.fileName
-        });
+      } else if (ts.isNamespaceImport(namedBindings)) {
+        // 处理命名空间导入
+        const importInfo: ImportInfo = {
+          name: namedBindings.name.text,
+          fromModule: resolvedPath,
+          isDefault: false,
+          originalName: '*'
+        };
+        symbols.imports.set(importInfo.name, importInfo);
       }
     }
   }
@@ -329,17 +330,19 @@ const createSymbolInfo = (
   typeChecker: ts.TypeChecker,
   sourceFile: ts.SourceFile
 ): SymbolInfo => {
-  const type = typeChecker.getTypeOfSymbolAtLocation(symbol, declaration);
-  
+  const type = typeChecker.typeToString(
+    typeChecker.getTypeOfSymbolAtLocation(symbol, declaration)
+  );
+
   return {
-    name: symbol.getName(),
+    name: symbol.name,
     kind: symbol.flags,
-    type: typeChecker.typeToString(type),
+    type,
     declaration,
-    isExported: hasExportModifier(declaration),
+    isExported: !!(symbol.flags & ts.SymbolFlags.ExportValue),
     documentation: ts.displayPartsToString(symbol.getDocumentationComment(typeChecker)),
     sourceLocation: getSourceLocation(declaration, sourceFile),
-    fileName: sourceFile.fileName,
+    fileName: path.basename(sourceFile.fileName),
     dependencies: new Set(),
     dependents: new Set()
   };
@@ -440,28 +443,67 @@ const findSymbolDependencies = (
 ): Set<string> => {
   const dependencies = new Set<string>();
   const visited = new Set<ts.Node>();
+  const localFunctions = new Set<string>();
+  const localVariables = new Set<string>();
 
+  // 首先收集所有局部函数和变量
   const collectLocals = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node)) {
+      if (node.initializer) {
+        if (ts.isFunctionExpression(node.initializer) || ts.isArrowFunction(node.initializer)) {
+          if (ts.isIdentifier(node.name)) {
+            localFunctions.add(node.name.text);
+          }
+        }
+      }
+      if (ts.isIdentifier(node.name)) {
+        localVariables.add(node.name.text);
+      }
+    } else if (ts.isFunctionDeclaration(node) && node.name) {
+      localFunctions.add(node.name.text);
+    }
+    node.forEachChild(child => collectLocals(child));
+  };
+
+  collectLocals(node);
+
+  const collectDependencies = (node: ts.Node) => {
     if (visited.has(node)) return;
     visited.add(node);
 
     if (ts.isIdentifier(node)) {
+      // 如果标识符是属性访问的一部分，不添加为依赖
+      if (ts.isPropertyAccessExpression(node.parent) && node.parent.name === node) {
+        return;
+      }
+
       const symbol = typeChecker.getSymbolAtLocation(node);
       if (symbol) {
         const declaration = symbol.declarations?.[0];
         if (declaration) {
-          const sourceFile = declaration.getSourceFile();
-          const symbolId = `${sourceFile.fileName}:${symbol.name}`;
+          const declSourceFile = declaration.getSourceFile();
+          const symbolName = symbol.name;
+
+          // 如果是局部函数或变量，不添加为依赖
+          if (localFunctions.has(symbolName) || localVariables.has(symbolName)) {
+            return;
+          }
+
+          // 检查是否是导入的符号
+          const importInfo = symbols.imports.get(symbolName);
+          const symbolId = importInfo 
+            ? `${importInfo.fromModule}:${importInfo.originalName || symbolName}`
+            : `${path.basename(declSourceFile.fileName)}:${symbolName}`;
 
           // 检查是否是系统符号
-          const isSystemSymbol = sourceFile.fileName.includes('node_modules/typescript/lib/');
+          const isSystemSymbol = declSourceFile.fileName.includes('node_modules/typescript/lib/');
           if (isSystemSymbol && !options.includeSystemSymbols) {
             return;
           }
 
           // 检查是否是 node_modules 中的符号
-          const isNodeModuleSymbol = sourceFile.fileName.includes('node_modules/') && 
-            !sourceFile.fileName.includes('node_modules/typescript/lib/');
+          const isNodeModuleSymbol = declSourceFile.fileName.includes('node_modules/') && 
+            !declSourceFile.fileName.includes('node_modules/typescript/lib/');
           if (isNodeModuleSymbol && !options.includeNodeModules) {
             return;
           }
@@ -482,32 +524,42 @@ const findSymbolDependencies = (
             currentNode = currentNode.parent;
           }
 
+          // 如果是接口或类型的属性，不添加为依赖
+          if (ts.isPropertySignature(declaration) || ts.isPropertyDeclaration(declaration)) {
+            return;
+          }
+
+          // 如果是类型引用，不添加为依赖
+          if (ts.isTypeReferenceNode(node.parent) || 
+              ts.isTypeAliasDeclaration(declaration) || 
+              ts.isInterfaceDeclaration(declaration) ||
+              ts.isClassDeclaration(declaration)) {
+            return;
+          }
+
           dependencies.add(symbolId);
         }
       }
     }
 
-    node.forEachChild(child => collectLocals(child));
+    node.forEachChild(child => collectDependencies(child));
   };
 
-  collectLocals(node);
+  collectDependencies(node);
   return dependencies;
 };
 
 /**
  * 解析相对路径
- * @param baseFile - 基础文件路径
- * @param relativePath - 相对路径
- * @returns 解析后的绝对路径
+ * @param fromPath - 源文件路径
+ * @param toPath - 目标文件路径
+ * @returns 解析后的路径
  */
-const resolveRelativePath = (baseFile: string, relativePath: string): string => {
-  const baseDir = path.dirname(baseFile);
-  const resolved = path.resolve(baseDir, relativePath);
-  
-  // 添加 .ts 扩展名如果不存在
-  if (!resolved.endsWith('.ts') && !resolved.endsWith('.js')) {
-    return resolved + '.ts';
+const resolveRelativePath = (fromPath: string, toPath: string): string => {
+  // 如果是相对路径，则相对于当前文件解析
+  if (toPath.startsWith('.')) {
+    const fromDir = path.dirname(fromPath);
+    return path.basename(path.resolve(fromDir, toPath));
   }
-  
-  return resolved;
+  return toPath;
 };

@@ -66,7 +66,8 @@ export const createMultiFileProgram = ({
     getCanonicalFileName: (name: string) => name,
     useCaseSensitiveFileNames: () => false,
     getNewLine: () => '\n',
-    getEnvironmentVariable: () => undefined
+    getEnvironmentVariable: () => undefined,
+    realpath: (name: string) => name
   };
 
   return ts.createProgram(Object.keys(files), {}, compilerHost);

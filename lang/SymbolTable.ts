@@ -23,10 +23,9 @@ export type SymbolInfo = {
  */
 export type ImportInfo = {
   name: string; // 本地名称
-  moduleSpecifier: string; // 模块路径
-  importType: 'default' | 'named' | 'namespace';
-  originalName: string; // 原始名称
-  fileName: string;
+  fromModule: string; // 模块路径
+  isDefault: boolean; // 是否是默认导入
+  originalName?: string; // 原始名称
 };
 
 /**
