@@ -2,10 +2,20 @@
   "name": "procbase",
   "module": "index.ts",
   "type": "module",
+  "bin": {
+    "ts-inspect": "./bin/ts-inspect.ts"
+  },
+  "scripts": {
+    "inspect": "bun bin/ts-inspect.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@typescript/vfs": "^1.6.1",
+    "ts-morph": "^26.0.0"
   }
 }

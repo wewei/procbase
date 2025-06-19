@@ -6,8 +6,8 @@ import {
   createDefaultCompilerOptions,
   performTreeShaking,
   getDiagnostics
-} from './ProjectAnalyzer';
-import type { TreeShakingResult } from './ProjectAnalyzer';
+} from '../lang/ProjectAnalyzer';
+import type { TreeShakingResult } from '../lang/ProjectAnalyzer';
 import { 
   generateDetailedReport, 
   generateSummaryReport, 
@@ -16,7 +16,7 @@ import {
   generateDependencyGraph,
   findCircularDependencies,
   findLargestSymbols
-} from './TreeShakingReporter';
+} from '../lang/TreeShakingReporter';
 
 /**
  * CLI选项
@@ -44,7 +44,7 @@ export type ReportFormat = 'text' | 'json' | 'markdown' | 'dot';
  */
 export const runAnalysis = async (options: CLIOptions): Promise<void> => {
   try {
-    console.log('🌳 开始 Tree Shaking 分析...');
+    console.log('🔍 开始 TypeScript 项目分析...');
     console.log('');
 
     // 创建分析上下文
@@ -253,10 +253,10 @@ export const parseArgs = (args: string[]): CLIOptions => {
  */
 export const printHelp = (): void => {
   console.log(`
-🌳 Tree Shaking 分析工具
+🔍 ts-inspect - TypeScript 项目分析工具
 
 用法:
-  bun run cli [选项]
+  ts-inspect [选项]
 
 选项:
   -c, --config <path>          指定 TypeScript 配置文件
@@ -270,9 +270,9 @@ export const printHelp = (): void => {
   -h, --help                   显示帮助信息
 
 示例:
-  bun run cli --config tsconfig.json --entry main,utils --output report
-  bun run cli --files src/main.ts,src/utils.ts --entry main --format json,markdown
-  bun run cli --config tsconfig.json --check-circular --show-largest
+  ts-inspect --config tsconfig.json --entry main,utils --output report
+  ts-inspect --files src/main.ts,src/utils.ts --entry main --format json,markdown
+  ts-inspect --config tsconfig.json --check-circular --show-largest
 `);
 };
 
@@ -280,7 +280,7 @@ export const printHelp = (): void => {
  * 运行示例
  */
 export const runExample = async (): Promise<void> => {
-  console.log('🚀 运行 Tree Shaking 示例...');
+  console.log('🚀 运行 TypeScript 项目分析示例...');
   
   // 这里可以添加一个简单的示例
   const exampleOptions: CLIOptions = {
