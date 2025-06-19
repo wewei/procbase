@@ -373,41 +373,80 @@ export const findLargestSymbols = (
 };
 
 /**
+ * 格式化符号位置信息
+ * @param symbolInfo - 符号信息
+ * @returns 格式化的位置信息字符串
+ */
+const formatSymbolLocation = (symbolInfo: SymbolInfo | undefined): string => {
+  if (!symbolInfo || !symbolInfo.sourceLocation) return '';
+  const { fileName } = symbolInfo;
+  const { line } = symbolInfo.sourceLocation;
+  return ` (${fileName}:${line})`;
+};
+
+/**
  * 生成依赖关系邻接表报告
  * @param result - Tree shaking分析结果
  * @returns 邻接表格式的依赖报告字符串
  */
 export const generateAdjacencyListReport = (result: TreeShakingResult): string => {
   const lines: string[] = [];
+  const processedSymbols = new Set<string>();
   
   lines.push('依赖关系邻接表');
   lines.push('='.repeat(80));
   lines.push('');
 
-  // 遍历所有符号
-  result.includedSymbols.forEach(symbolName => {
+  // 处理一个符号及其所有依赖
+  const processSymbol = (symbolName: string, indent: string = '') => {
+    if (processedSymbols.has(symbolName)) {
+      // 如果已经处理过这个符号，只输出引用
+      const symbolInfo = getSymbol(result.symbolTable, symbolName);
+      const location = formatSymbolLocation(symbolInfo);
+      lines.push(`${indent}${extractSymbolName(symbolName)}${location} (已在上方详细列出)`);
+      return;
+    }
+
+    processedSymbols.add(symbolName);
     const symbolInfo = getSymbol(result.symbolTable, symbolName);
     if (!symbolInfo) return;
-    
-    // 获取符号的简短名称（不包含文件路径）
+
+    // 获取符号的简短名称和位置信息
     const shortName = extractSymbolName(symbolName);
+    const location = formatSymbolLocation(symbolInfo);
     
-    // 获取依赖的符号的简短名称
-    const dependencies = Array.from(symbolInfo.dependencies)
-      .map(dep => extractSymbolName(dep))
-      .sort();
+    // 输出当前符号
+    lines.push(`${indent}${shortName}${location}:`);
     
-    // 输出邻接表条目
-    lines.push(`${shortName}:`);
+    // 获取并排序依赖
+    const dependencies = Array.from(symbolInfo.dependencies).sort();
+    
     if (dependencies.length > 0) {
+      // 递归处理每个依赖
       dependencies.forEach(dep => {
-        lines.push(`  - ${dep}`);
+        processSymbol(dep, `${indent}  `);
       });
     } else {
-      lines.push('  (无依赖)');
+      lines.push(`${indent}  (无依赖)`);
     }
-    lines.push('');
-  });
+    
+    if (indent === '') {  // 只在顶层符号后添加空行
+      lines.push('');
+    }
+  };
+
+  // 首先处理所有包含的符号
+  const allSymbols = new Set([
+    ...Array.from(result.includedSymbols),
+    ...Array.from(result.unusedSymbols)
+  ]);
+
+  // 按符号名称排序处理所有符号
+  Array.from(allSymbols)
+    .sort((a, b) => extractSymbolName(a).localeCompare(extractSymbolName(b)))
+    .forEach(symbolName => {
+      processSymbol(symbolName);
+    });
   
   return lines.join('\n');
 };
