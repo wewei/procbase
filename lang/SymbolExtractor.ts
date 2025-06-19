@@ -408,86 +408,67 @@ const findSymbolDependencies = (
 ): Set<string> => {
   const dependencies = new Set<string>();
 
-  const visit = (node: ts.Node) => {
+  // 收集所有参数和局部变量名
+  const localNames = new Set<string>();
+  const collectLocals = (node: ts.Node) => {
+    if (ts.isFunctionLike(node)) {
+      node.parameters.forEach(param => {
+        if (ts.isIdentifier(param.name)) {
+          localNames.add(param.name.text);
+        }
+      });
+    }
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+      localNames.add(node.name.text);
+    }
+    ts.forEachChild(node, collectLocals);
+  };
+  collectLocals(node);
+
+  // 获取当前顶层符号名（如函数名、变量名）
+  let currentTopLevelName = '';
+  if ((ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node) || ts.isClassDeclaration(node)) && node.name && ts.isIdentifier(node.name)) {
+    currentTopLevelName = node.name.text;
+  }
+
+  // 判断是否是类型节点
+  function isTypeNodeOrChild(n: ts.Node): boolean {
+    if (ts.isTypeNode(n)) return true;
+    let parent = n.parent;
+    while (parent) {
+      if (ts.isTypeNode(parent)) return true;
+      parent = parent.parent;
+    }
+    return false;
+  }
+
+  const visit = (node: ts.Node, isPropertyAccess: boolean = false) => {
+    // 类型节点及其所有子节点全部跳过
+    if (ts.isTypeNode(node)) return;
+
     // 查找标识符引用
     if (ts.isIdentifier(node)) {
-      const symbol = typeChecker.getSymbolAtLocation(node);
-      if (symbol) {
-        const symbolName = symbol.getName();
-        
-        // 检查是否是导入的符号
-        if (symbols.imports.has(symbolName)) {
-          // 对于导入的符号，我们需要找到它们的实际定义
-          const importInfo = symbols.imports.get(symbolName)!;
-          console.log(`   找到导入符号: ${symbolName} from ${importInfo.moduleSpecifier}`);
-          
-          // 尝试解析模块路径
-          const modulePath = importInfo.moduleSpecifier;
-          if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-            // 相对路径导入，尝试找到对应的文件
-            const resolvedPath = resolveRelativePath(sourceFile.fileName, modulePath);
-            console.log(`   解析路径: ${sourceFile.fileName} + ${modulePath} = ${resolvedPath}`);
-            
-            // 检查是否在全局符号表中
-            const globalSymbols = typeChecker.getSymbolsInScope(node, ts.SymbolFlags.All);
-            globalSymbols.forEach(globalSymbol => {
-              if (globalSymbol.getName() === symbolName) {
-                const declarations = globalSymbol.getDeclarations();
-                if (declarations && declarations.length > 0) {
-                  const declaration = declarations[0];
-                  if (declaration) {
-                    const fileName = declaration.getSourceFile().fileName;
-                    console.log(`   找到全局符号: ${fileName}:${symbolName}`);
-                    if (fileName !== sourceFile.fileName) {
-                      dependencies.add(`${fileName}:${symbolName}`);
-                    }
-                  }
-                }
-              }
-            });
-          }
-        }
-        
-        // 获取符号的实际声明位置
-        const declarations = symbol.getDeclarations();
-        if (declarations && declarations.length > 0) {
-          const declaration = declarations[0];
-          if (declaration) {
-            const fileName = declaration.getSourceFile().fileName;
-            console.log(`   符号 ${symbolName} 声明在: ${fileName}`);
-            // 只添加非当前文件的依赖，避免自引用
-            if (fileName !== sourceFile.fileName) {
-              dependencies.add(`${fileName}:${symbolName}`);
-            }
-          }
-        }
-      }
-    }
-    
-    // 查找类型引用
-    else if (ts.isTypeReferenceNode(node)) {
-      if (ts.isIdentifier(node.typeName)) {
-        const symbol = typeChecker.getSymbolAtLocation(node.typeName);
+      if (!isPropertyAccess) {
+        const symbol = typeChecker.getSymbolAtLocation(node);
         if (symbol) {
           const symbolName = symbol.getName();
-          // 获取符号的实际声明位置
-          const declarations = symbol.getDeclarations();
-          if (declarations && declarations.length > 0) {
-            const declaration = declarations[0];
-            if (declaration) {
-              const fileName = declaration.getSourceFile().fileName;
-              // 只添加非当前文件的依赖，避免自引用
-              if (fileName !== sourceFile.fileName) {
-                dependencies.add(`${fileName}:${symbolName}`);
-              }
-            }
+          // 只添加文件作用域顶层符号，且不是参数、不是局部变量、不是自身
+          if ((symbols.exports.has(symbolName) || symbols.internal.has(symbolName))
+            && !localNames.has(symbolName)
+            && symbolName !== currentTopLevelName) {
+            dependencies.add(`${sourceFile.fileName}:${symbolName}`);
           }
         }
       }
+      return;
     }
-    
-    // 递归访问子节点
-    ts.forEachChild(node, visit);
+    if (ts.isPropertyAccessExpression(node)) {
+      // 只递归对象部分，属性名不递归
+      visit(node.expression, false);
+      return;
+    }
+    // 其它节点递归
+    ts.forEachChild(node, child => visit(child, false));
   };
 
   visit(node);
