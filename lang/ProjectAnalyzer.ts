@@ -33,6 +33,7 @@ export type TreeShakingStatistics = {
 export type AnalysisOptions = {
   includeDeclarationFiles?: boolean;
   includeNodeModules?: boolean;
+  includeSystemSymbols?: boolean;
   followTypeOnlyImports?: boolean;
   maxDepth?: number;
 };
@@ -96,14 +97,19 @@ export const getSourceFiles = (
  * 分析单个源文件
  * @param sourceFile - 源文件
  * @param typeChecker - 类型检查器
+ * @param options - 分析选项
  * @returns 文件符号信息
  */
 export const analyzeSourceFile = (
   sourceFile: ts.SourceFile,
-  typeChecker: ts.TypeChecker
+  typeChecker: ts.TypeChecker,
+  options: AnalysisOptions = {}
 ): FileSymbols => {
   console.log(`正在分析文件: ${sourceFile.fileName}`);
-  const symbols = extractSymbolsFromFile(sourceFile, typeChecker);
+  const symbols = extractSymbolsFromFile(sourceFile, typeChecker, {
+    includeNodeModules: options.includeNodeModules ?? false,
+    includeSystemSymbols: options.includeSystemSymbols ?? false
+  });
   
   return {
     fileName: sourceFile.fileName,
@@ -114,13 +120,17 @@ export const analyzeSourceFile = (
 /**
  * 分析整个项目
  * @param context - 项目分析上下文
+ * @param options - 分析选项
  * @returns 项目符号表
  */
-export const analyzeProject = (context: ProjectAnalysisContext): ReturnType<typeof createProjectSymbolTable> => {
+export const analyzeProject = (
+  context: ProjectAnalysisContext,
+  options: AnalysisOptions = {}
+): ReturnType<typeof createProjectSymbolTable> => {
   const sourceFiles = getSourceFiles(context.program, context.rootFiles);
   
   sourceFiles.forEach(sourceFile => {
-    const fileSymbols = analyzeSourceFile(sourceFile, context.typeChecker);
+    const fileSymbols = analyzeSourceFile(sourceFile, context.typeChecker, options);
     addFileSymbols(context.symbolTable, fileSymbols);
   });
   
@@ -199,25 +209,33 @@ export const getDiagnostics = (program: ts.Program): ts.Diagnostic[] => {
 };
 
 /**
- * 执行tree shaking分析
+ * 执行 Tree Shaking 分析
  * @param context - 项目分析上下文
  * @param entryPoints - 入口点列表
- * @returns Tree shaking分析结果
+ * @param options - 分析选项
+ * @returns Tree Shaking 分析结果
  */
 export const performTreeShaking = (
   context: ProjectAnalysisContext,
-  entryPoints: string[]
+  entryPoints: string[],
+  options: AnalysisOptions = {}
 ): TreeShakingResult => {
-  const symbolTable = analyzeProject(context);
-  
+  // 分析项目
+  const symbolTable = analyzeProject(context, options);
+
   // 计算符号闭包
   const includedSymbols = calculateClosure(symbolTable, entryPoints);
-  const unusedSymbols = findUnusedSymbols(symbolTable, entryPoints);
-  
+
+  // 查找未使用的符号
+  const unusedSymbols = findUnusedSymbols(symbolTable, Array.from(includedSymbols));
+
   // 按文件分组
   const includedByFile = groupSymbolsByFile(includedSymbols, symbolTable);
   const unusedByFile = groupSymbolsByFile(unusedSymbols, symbolTable);
-  
+
+  // 计算统计信息
+  const statistics = calculateStatistics(symbolTable, includedSymbols, unusedSymbols);
+
   return {
     entryPoints,
     includedSymbols,
@@ -225,7 +243,7 @@ export const performTreeShaking = (
     includedByFile,
     unusedByFile,
     symbolTable,
-    statistics: calculateStatistics(symbolTable, includedSymbols, unusedSymbols)
+    statistics
   };
 };
 

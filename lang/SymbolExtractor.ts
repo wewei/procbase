@@ -3,14 +3,24 @@ import path from 'node:path';
 import type { SymbolInfo, ImportInfo, ExtractedSymbols, SourceLocation } from './SymbolTable';
 
 /**
+ * 符号提取选项
+ */
+export type SymbolExtractionOptions = {
+  includeNodeModules: boolean;  // 是否包含 node_modules 中的依赖
+  includeSystemSymbols: boolean;  // 是否包含系统符号
+};
+
+/**
  * 从源文件中提取所有符号
  * @param sourceFile - 源文件
  * @param typeChecker - 类型检查器
+ * @param options - 符号提取选项
  * @returns 提取的符号集合
  */
 export const extractSymbolsFromFile = (
   sourceFile: ts.SourceFile,
-  typeChecker: ts.TypeChecker
+  typeChecker: ts.TypeChecker,
+  options: SymbolExtractionOptions = { includeNodeModules: false, includeSystemSymbols: false }
 ): ExtractedSymbols => {
   const symbols: ExtractedSymbols = {
     exports: new Map(),
@@ -24,7 +34,7 @@ export const extractSymbolsFromFile = (
   });
 
   // 计算符号依赖关系
-  calculateDependencies(symbols, typeChecker, sourceFile);
+  calculateDependencies(symbols, typeChecker, sourceFile, options);
 
   return symbols;
 };
@@ -378,100 +388,95 @@ const getSourceLocation = (node: ts.Node, sourceFile: ts.SourceFile): SourceLoca
  * @param symbols - 符号集合
  * @param typeChecker - 类型检查器
  * @param sourceFile - 源文件
+ * @param options - 符号提取选项
  */
 const calculateDependencies = (
   symbols: ExtractedSymbols,
   typeChecker: ts.TypeChecker,
-  sourceFile: ts.SourceFile
+  sourceFile: ts.SourceFile,
+  options: SymbolExtractionOptions
 ): void => {
-  const allSymbols = new Map(Array.from(symbols.exports).concat(Array.from(symbols.internal)));
-  
-  allSymbols.forEach((symbolInfo, symbolName) => {
-    const dependencies = findSymbolDependencies(symbolInfo.declaration, symbols, typeChecker, sourceFile);
-    symbolInfo.dependencies = dependencies;
-  });
+  const processSymbols = (symbolMap: Map<string, SymbolInfo>) => {
+    symbolMap.forEach(symbolInfo => {
+      if (symbolInfo.declaration) {
+        symbolInfo.dependencies = findSymbolDependencies(
+          symbolInfo.declaration,
+          symbols,
+          typeChecker,
+          sourceFile,
+          options
+        );
+      }
+    });
+  };
+
+  processSymbols(symbols.exports);
+  processSymbols(symbols.internal);
 };
 
 /**
- * 查找符号的依赖关系
- * @param node - 节点
+ * 查找符号依赖
+ * @param node - AST节点
  * @param symbols - 符号集合
  * @param typeChecker - 类型检查器
  * @param sourceFile - 源文件
- * @returns 依赖符号集合
+ * @param options - 符号提取选项
+ * @returns 依赖的符号集合
  */
 const findSymbolDependencies = (
   node: ts.Node,
   symbols: ExtractedSymbols,
   typeChecker: ts.TypeChecker,
-  sourceFile: ts.SourceFile
+  sourceFile: ts.SourceFile,
+  options: SymbolExtractionOptions
 ): Set<string> => {
   const dependencies = new Set<string>();
+  const visited = new Set<ts.Node>();
 
-  // 收集所有参数和局部变量名
-  const localNames = new Set<string>();
   const collectLocals = (node: ts.Node) => {
-    if (ts.isFunctionLike(node)) {
-      node.parameters.forEach(param => {
-        if (ts.isIdentifier(param.name)) {
-          localNames.add(param.name.text);
-        }
-      });
-    }
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-      localNames.add(node.name.text);
-    }
-    ts.forEachChild(node, collectLocals);
-  };
-  collectLocals(node);
+    if (visited.has(node)) return;
+    visited.add(node);
 
-  // 获取当前顶层符号名（如函数名、变量名）
-  let currentTopLevelName = '';
-  if ((ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node) || ts.isClassDeclaration(node)) && node.name && ts.isIdentifier(node.name)) {
-    currentTopLevelName = node.name.text;
-  }
-
-  // 判断是否是类型节点
-  function isTypeNodeOrChild(n: ts.Node): boolean {
-    if (ts.isTypeNode(n)) return true;
-    let parent = n.parent;
-    while (parent) {
-      if (ts.isTypeNode(parent)) return true;
-      parent = parent.parent;
-    }
-    return false;
-  }
-
-  const visit = (node: ts.Node, isPropertyAccess: boolean = false) => {
-    // 类型节点及其所有子节点全部跳过
-    if (ts.isTypeNode(node)) return;
-
-    // 查找标识符引用
     if (ts.isIdentifier(node)) {
-      if (!isPropertyAccess) {
-        const symbol = typeChecker.getSymbolAtLocation(node);
-        if (symbol) {
-          const symbolName = symbol.getName();
-          // 只添加文件作用域顶层符号，且不是参数、不是局部变量、不是自身
-          if ((symbols.exports.has(symbolName) || symbols.internal.has(symbolName))
-            && !localNames.has(symbolName)
-            && symbolName !== currentTopLevelName) {
-            dependencies.add(`${sourceFile.fileName}:${symbolName}`);
+      const symbol = typeChecker.getSymbolAtLocation(node);
+      if (symbol) {
+        const declaration = symbol.declarations?.[0];
+        if (declaration) {
+          const sourceFile = declaration.getSourceFile();
+          const symbolId = `${sourceFile.fileName}:${symbol.name}`;
+
+          // 检查是否是系统符号
+          const isSystemSymbol = sourceFile.fileName.includes('node_modules/typescript/lib/');
+          if (isSystemSymbol && !options.includeSystemSymbols) {
+            return;
           }
+
+          // 检查是否是 node_modules 中的符号
+          const isNodeModuleSymbol = sourceFile.fileName.includes('node_modules/') && 
+            !sourceFile.fileName.includes('node_modules/typescript/lib/');
+          if (isNodeModuleSymbol && !options.includeNodeModules) {
+            return;
+          }
+
+          // 如果是参数声明，不添加为依赖
+          if (ts.isParameter(declaration)) {
+            return;
+          }
+
+          // 如果是当前符号的声明，不添加为依赖
+          if (declaration === node.parent) {
+            return;
+          }
+
+          dependencies.add(symbolId);
         }
       }
-      return;
     }
-    if (ts.isPropertyAccessExpression(node)) {
-      // 只递归对象部分，属性名不递归
-      visit(node.expression, false);
-      return;
-    }
-    // 其它节点递归
-    ts.forEachChild(node, child => visit(child, false));
+
+    node.forEachChild(child => collectLocals(child));
   };
 
-  visit(node);
+  collectLocals(node);
   return dependencies;
 };
 

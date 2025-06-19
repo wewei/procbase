@@ -32,6 +32,8 @@ export type CLIOptions = {
   showLargest: boolean;
   strict: boolean;
   graph: boolean;
+  includeNodeModules: boolean;  // 是否包含 node_modules 中的依赖
+  includeSystemSymbols: boolean;  // 是否包含系统符号（如内置类型）
   compilerOptions?: any;
 };
 
@@ -80,7 +82,10 @@ export const runAnalysis = async (options: CLIOptions): Promise<void> => {
     }
 
     // 执行分析
-    const result = performTreeShaking(context, options.entryPoints);
+    const result = performTreeShaking(context, options.entryPoints, {
+      includeNodeModules: options.includeNodeModules,
+      includeSystemSymbols: options.includeSystemSymbols
+    });
     
     console.log('✅ 分析完成!');
     console.log('');
@@ -205,7 +210,9 @@ export const parseArgs = (args: string[]): CLIOptions => {
     checkCircular: false,
     showLargest: false,
     strict: false,
-    graph: false
+    graph: false,
+    includeNodeModules: false,
+    includeSystemSymbols: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -253,6 +260,12 @@ export const parseArgs = (args: string[]): CLIOptions => {
       case '--graph':
         options.graph = true;
         break;
+      case '--include-node-modules':
+        options.includeNodeModules = true;
+        break;
+      case '--include-system-symbols':
+        options.includeSystemSymbols = true;
+        break;
       case '--help':
       case '-h':
         printHelp();
@@ -284,6 +297,8 @@ export const printHelp = (): void => {
   --show-largest               显示依赖最多的符号
   --strict                     严格模式（不允许编译错误）
   --graph                      输出依赖关系邻接表
+  --include-node-modules       包含 node_modules 中的依赖
+  --include-system-symbols     包含系统符号（如内置类型）
   -h, --help                   显示帮助信息
 
 示例:
@@ -298,24 +313,19 @@ export const printHelp = (): void => {
  * 运行示例
  */
 export const runExample = async (): Promise<void> => {
-  console.log('🚀 运行 TypeScript 项目分析示例...');
-  
-  // 这里可以添加一个简单的示例
-  const exampleOptions: CLIOptions = {
-    files: ['example.ts'],
-    entryPoints: ['main'],
+  const options: CLIOptions = {
+    files: ['src/**/*.ts'],
+    entryPoints: ['src/index.ts'],
     format: ['text'],
     checkCircular: false,
     showLargest: false,
     strict: false,
-    graph: false
+    graph: false,
+    includeNodeModules: false,
+    includeSystemSymbols: false
   };
-  
-  try {
-    await runAnalysis(exampleOptions);
-  } catch (error) {
-    console.log('示例运行失败，这是正常的，因为示例文件不存在');
-  }
+
+  await runAnalysis(options);
 };
 
 // 如果直接运行此文件
