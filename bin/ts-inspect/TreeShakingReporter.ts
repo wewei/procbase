@@ -22,6 +22,16 @@ export type ImpactAnalysis = {
 };
 
 /**
+ * 从符号全名中提取符号名称（不包含文件路径）
+ * @param fullSymbolName - 完整的符号名称（格式：file:path:symbol）
+ * @returns 符号名称
+ */
+const extractSymbolName = (fullSymbolName: string): string => {
+  const lastColonIndex = fullSymbolName.lastIndexOf(':');
+  return lastColonIndex !== -1 ? fullSymbolName.slice(lastColonIndex + 1) : fullSymbolName;
+};
+
+/**
  * 生成详细报告
  * @param result - Tree shaking分析结果
  * @returns 详细报告字符串
@@ -163,7 +173,7 @@ export const generateDependencyGraph = (
     
     const isIncluded = result.includedSymbols.has(symbolName);
     const color = isIncluded ? 'lightgreen' : 'lightcoral';
-    const label = symbolName.split(':')[1]; // 只显示符号名，不显示文件路径
+    const label = extractSymbolName(symbolName); // 使用新的提取函数
     
     lines.push(`  "${symbolName}" [label="${label}", fillcolor=${color}];`);
     
@@ -380,11 +390,11 @@ export const generateAdjacencyListReport = (result: TreeShakingResult): string =
     if (!symbolInfo) return;
     
     // 获取符号的简短名称（不包含文件路径）
-    const shortName = symbolName.split(':')[1];
+    const shortName = extractSymbolName(symbolName);
     
     // 获取依赖的符号的简短名称
     const dependencies = Array.from(symbolInfo.dependencies)
-      .map(dep => dep.split(':')[1])
+      .map(dep => extractSymbolName(dep))
       .sort();
     
     // 输出邻接表条目
