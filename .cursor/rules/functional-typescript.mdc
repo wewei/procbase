@@ -1,0 +1,518 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Functional TypeScript Rules
+
+This document defines the coding standards and patterns for writing functional TypeScript code in this project.
+
+## Core Principles
+
+### 1. Function-First Approach
+- **Do not define classes** - Use functions and function composition instead
+- **Prefer pure functions** - Functions should be predictable and have no side effects when possible
+- **Use function composition** - Combine small functions to build complex behavior
+
+### 2. Type Definitions
+- **Use `type` instead of `interface`** - Always use `type` to define structure types
+- **Avoid `enum`** - Use literal union types instead of enums
+- **Prefer union types** - Use discriminated unions for complex state modeling
+
+### 3. Function Design
+- **Keep functions short** - Functions longer than 50 lines should be broken down
+- **Single responsibility** - Each function should do one thing well
+- **Descriptive names** - Function names should clearly describe their functionality
+
+### 4. Documentation
+- **TSDoc for all functions** - Every function must have TSDoc covering:
+  - Description of what the function does
+  - Parameters with types and descriptions
+  - Return value with type and description
+  - Examples for complex functions
+
+## Type Definitions
+
+### ✅ Good - Use `type`
+```typescript
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+};
+
+type ApiResponse<T> = {
+  data: T;
+  status: 'success' | 'error';
+  message?: string;
+};
+
+type ValidationResult = 
+  | { isValid: true; value: unknown }
+  | { isValid: false; errors: string[] };
+```
+
+### ❌ Bad - Don't use `interface`
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+}
+```
+
+### ✅ Good - Use literal union types
+```typescript
+type Status = 'pending' | 'loading' | 'success' | 'error';
+type UserRole = 'admin' | 'user' | 'guest';
+type FileType = 'text' | 'json' | 'markdown' | 'dot';
+```
+
+### ❌ Bad - Don't use `enum`
+```typescript
+enum Status {
+  Pending = 'pending',
+  Loading = 'loading',
+  Success = 'success',
+  Error = 'error'
+}
+```
+
+## Function Patterns
+
+### ✅ Good - Pure Functions
+```typescript
+/**
+ * Validates if a string is a valid email address
+ * @param email - The email string to validate
+ * @returns True if the email is valid, false otherwise
+ */
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * Formats a user object for display
+ * @param user - The user object to format
+ * @returns A formatted string representation of the user
+ */
+const formatUser = (user: User): string => {
+  return `${user.name} (${user.email})`;
+};
+```
+
+### ✅ Good - Function Composition
+```typescript
+/**
+ * Processes a list of users by filtering active users and formatting them
+ * @param users - Array of users to process
+ * @returns Array of formatted active user strings
+ */
+const processActiveUsers = (users: User[]): string[] => {
+  return users
+    .filter(user => user.isActive)
+    .map(formatUser);
+};
+```
+
+### ❌ Bad - Classes
+```typescript
+class UserProcessor {
+  private users: User[];
+  
+  constructor(users: User[]) {
+    this.users = users;
+  }
+  
+  processActiveUsers(): string[] {
+    // implementation
+  }
+}
+```
+
+## Function Length Guidelines
+
+### ✅ Good - Short, Focused Functions
+```typescript
+/**
+ * Extracts file extension from a filename
+ * @param filename - The filename to extract extension from
+ * @returns The file extension without the dot, or empty string if no extension
+ */
+const getFileExtension = (filename: string): string => {
+  const lastDotIndex = filename.lastIndexOf('.');
+  return lastDotIndex > 0 ? filename.slice(lastDotIndex + 1) : '';
+};
+
+/**
+ * Determines if a file is a supported type
+ * @param filename - The filename to check
+ * @returns True if the file type is supported
+ */
+const isSupportedFileType = (filename: string): boolean => {
+  const extension = getFileExtension(filename);
+  const supportedTypes = ['ts', 'js', 'json', 'md'];
+  return supportedTypes.includes(extension);
+};
+```
+
+### ⚠️ Warning - Function Too Long (Break Down)
+```typescript
+// This function is too long and should be broken down
+const processFile = (filePath: string): ProcessResult => {
+  // 60+ lines of code...
+  // Should be broken into smaller functions like:
+  // - validateFilePath
+  // - readFileContent
+  // - parseFileContent
+  // - validateFileStructure
+  // - createProcessResult
+};
+```
+
+## Error Handling Patterns
+
+### ✅ Good - Result Types
+```typescript
+type Result<T, E> = { success: T } | { error: E };
+
+/**
+ * Safely reads a file and returns a Result type
+ * @param filePath - Path to the file to read
+ * @returns Result containing file content or error
+ */
+const readFileSafely = async (filePath: string): Promise<Result<string, Error>> => {
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    return { success: content };
+  } catch (error) {
+    return { error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+```
+
+### ✅ Good - Type Guards
+```typescript
+/**
+ * Type guard to check if a value is a success result
+ * @param result - The result to check
+ * @returns True if the result is a success
+ */
+const isSuccess = <T, E>(result: Result<T, E>): result is { success: T } => {
+  return 'success' in result;
+};
+
+/**
+ * Type guard to check if a value is an error result
+ * @param result - The result to check
+ * @returns True if the result is an error
+ */
+const isError = <T, E>(result: Result<T, E>): result is { error: E } => {
+  return 'error' in result;
+};
+```
+
+## Configuration and Options
+
+### ✅ Good - Options Pattern
+```typescript
+type CompilerOptions = {
+  target?: 'ES2020' | 'ESNext';
+  module?: 'ESNext' | 'CommonJS';
+  strict?: boolean;
+  sourceMap?: boolean;
+};
+
+/**
+ * Creates default compiler options with sensible defaults
+ * @returns Default compiler options
+ */
+const createDefaultCompilerOptions = (): CompilerOptions => ({
+  target: 'ES2020',
+  module: 'ESNext',
+  strict: true,
+  sourceMap: true
+});
+
+/**
+ * Merges user options with defaults
+ * @param userOptions - User-provided options
+ * @param defaults - Default options to merge with
+ * @returns Merged options object
+ */
+const mergeOptions = <T extends object>(
+  userOptions: Partial<T>,
+  defaults: T
+): T => ({
+  ...defaults,
+  ...userOptions
+});
+```
+
+## Data Transformation Patterns
+
+### ✅ Good - Immutable Transformations
+```typescript
+/**
+ * Transforms a list of users into a map keyed by user ID
+ * @param users - Array of users to transform
+ * @returns Map of users keyed by their ID
+ */
+const usersToMap = (users: User[]): Map<string, User> => {
+  return new Map(users.map(user => [user.id, user]));
+};
+
+/**
+ * Filters and sorts users by name
+ * @param users - Array of users to process
+ * @param filterActive - Whether to filter only active users
+ * @returns Filtered and sorted array of users
+ */
+const filterAndSortUsers = (
+  users: User[],
+  filterActive: boolean = false
+): User[] => {
+  return users
+    .filter(user => !filterActive || user.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+```
+
+## Async Function Patterns
+
+### ✅ Good - Async Functions
+```typescript
+/**
+ * Fetches user data from an API
+ * @param userId - The ID of the user to fetch
+ * @returns Promise resolving to user data or error
+ */
+const fetchUser = async (userId: string): Promise<Result<User, Error>> => {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const user = await response.json();
+    return { success: user };
+  } catch (error) {
+    return { error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+/**
+ * Processes multiple users concurrently
+ * @param userIds - Array of user IDs to fetch
+ * @returns Promise resolving to array of user results
+ */
+const fetchUsers = async (userIds: string[]): Promise<Result<User, Error>[]> => {
+  const promises = userIds.map(fetchUser);
+  return Promise.all(promises);
+};
+```
+
+## Utility Function Patterns
+
+### ✅ Good - Utility Functions
+```typescript
+/**
+ * Debounces a function call
+ * @param func - The function to debounce
+ * @param delay - Delay in milliseconds
+ * @returns Debounced function
+ */
+const debounce = <T extends (...args: unknown[]) => unknown>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
+/**
+ * Memoizes a function result
+ * @param func - The function to memoize
+ * @returns Memoized function
+ */
+const memoize = <T extends (...args: unknown[]) => unknown>(
+  func: T
+): T => {
+  const cache = new Map<string, unknown>();
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    const result = func(...args);
+    cache.set(key, result);
+    return result;
+  }) as T;
+};
+```
+
+## Testing Patterns
+
+### ✅ Good - Test Functions
+```typescript
+/**
+ * Creates a mock user for testing
+ * @param overrides - Optional overrides for default values
+ * @returns A mock user object
+ */
+const createMockUser = (overrides: Partial<User> = {}): User => ({
+  id: 'test-id',
+  name: 'Test User',
+  email: 'test@example.com',
+  isActive: true,
+  ...overrides
+});
+
+/**
+ * Asserts that a result is a success
+ * @param result - The result to assert
+ * @param message - Optional error message
+ */
+const assertSuccess = <T, E>(
+  result: Result<T, E>,
+  message?: string
+): asserts result is { success: T } => {
+  if (!isSuccess(result)) {
+    throw new Error(message || 'Expected success result');
+  }
+};
+```
+
+## File Organization
+
+### ✅ Good - Module Structure
+```typescript
+// types.ts - Type definitions
+export type User = { /* ... */ };
+export type ApiResponse<T> = { /* ... */ };
+
+// utils.ts - Utility functions
+export const isValidEmail = (email: string): boolean => { /* ... */ };
+export const formatUser = (user: User): string => { /* ... */ };
+
+// api.ts - API functions
+export const fetchUser = async (userId: string): Promise<Result<User, Error>> => { /* ... */ };
+
+// index.ts - Main exports
+export * from './types';
+export * from './utils';
+export * from './api';
+```
+
+## Common Anti-Patterns to Avoid
+
+### ❌ Don't - Mutating Parameters
+```typescript
+const processUsers = (users: User[]): User[] => {
+  users.sort((a, b) => a.name.localeCompare(b.name)); // Mutates input!
+  return users;
+};
+```
+
+### ✅ Do - Create New Objects
+```typescript
+const processUsers = (users: User[]): User[] => {
+  return [...users].sort((a, b) => a.name.localeCompare(b.name));
+};
+```
+
+### ❌ Don't - Complex Nested Logic
+```typescript
+const processData = (data: unknown): string => {
+  if (typeof data === 'string') {
+    if (data.length > 0) {
+      if (data.includes('@')) {
+        return 'email';
+      } else {
+        return 'text';
+      }
+    } else {
+      return 'empty';
+    }
+  } else {
+    return 'unknown';
+  }
+};
+```
+
+### ✅ Do - Early Returns and Guard Clauses
+```typescript
+const processData = (data: unknown): string => {
+  if (typeof data !== 'string') return 'unknown';
+  if (data.length === 0) return 'empty';
+  if (data.includes('@')) return 'email';
+  return 'text';
+};
+```
+
+## Performance Considerations
+
+### ✅ Good - Lazy Evaluation
+```typescript
+/**
+ * Creates a lazy-loaded value
+ * @param factory - Function to create the value
+ * @returns Object with get method that returns the value
+ */
+const createLazyValue = <T>(factory: () => T) => {
+  let value: T | undefined;
+  return {
+    get: (): T => {
+      if (value === undefined) {
+        value = factory();
+      }
+      return value;
+    }
+  };
+};
+```
+
+### ✅ Good - Efficient Iteration
+```typescript
+/**
+ * Processes items in batches to avoid memory issues
+ * @param items - Items to process
+ * @param batchSize - Size of each batch
+ * @param processor - Function to process each batch
+ * @returns Promise resolving when all batches are processed
+ */
+const processInBatches = async <T, R>(
+  items: T[],
+  batchSize: number,
+  processor: (batch: T[]) => Promise<R[]>
+): Promise<R[]> => {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await processor(batch);
+    results.push(...batchResults);
+  }
+  return results;
+};
+```
+
+## Summary
+
+Follow these principles to write maintainable, functional TypeScript code:
+
+1. **Functions over classes** - Use function composition and pure functions
+2. **Types over interfaces** - Always use `type` for structure definitions
+3. **Literal unions over enums** - Use union types for constants
+4. **Keep functions small** - Break down functions longer than 50 lines
+5. **Document everything** - Use TSDoc for all functions
+6. **Be immutable** - Avoid mutating data, create new objects instead
+7. **Handle errors gracefully** - Use Result types and proper error handling
+8. **Write tests** - Create test utilities and mock functions
+
+These patterns will lead to more maintainable, testable, and predictable code.
+
