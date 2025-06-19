@@ -3,10 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "bin": {
-    "ts-inspect": "./bin/ts-inspect.ts"
+    "ts-inspect": "./bin/ts-inspect/index.ts"
   },
   "scripts": {
-    "inspect": "bun bin/ts-inspect.ts"
+    "inspect": "bun bin/ts-inspect/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
