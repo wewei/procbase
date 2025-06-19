@@ -102,7 +102,15 @@ const handleVariableStatement = (
     if (ts.isIdentifier(decl.name)) {
       const symbol = typeChecker.getSymbolAtLocation(decl.name);
       if (symbol) {
-        const symbolInfo = createSymbolInfo(symbol, decl, typeChecker, sourceFile);
+        // 如果变量声明是函数表达式，使用整个函数表达式作为声明
+        let declaration: ts.Declaration = decl;
+        if (decl.initializer && (
+          ts.isArrowFunction(decl.initializer) || 
+          ts.isFunctionExpression(decl.initializer)
+        )) {
+          declaration = decl.initializer;
+        }
+        const symbolInfo = createSymbolInfo(symbol, declaration, typeChecker, sourceFile);
         addSymbol(symbolInfo, isExported, symbols);
       }
     }
@@ -464,8 +472,14 @@ const findSymbolDependencies = (
           }
 
           // 如果是当前符号的声明，不添加为依赖
-          if (declaration === node.parent) {
-            return;
+          // 对于函数表达式，需要检查父级变量声明
+          let currentNode: ts.Node | undefined = node;
+          while (currentNode) {
+            if (currentNode === declaration || 
+                (ts.isVariableDeclaration(currentNode) && currentNode.name === node)) {
+              return;
+            }
+            currentNode = currentNode.parent;
           }
 
           dependencies.add(symbolId);
