@@ -399,15 +399,6 @@ export const generateAdjacencyListReport = (result: TreeShakingResult): string =
 
   // 处理一个符号及其所有依赖
   const processSymbol = (symbolName: string, indent: string = '') => {
-    if (processedSymbols.has(symbolName)) {
-      // 如果已经处理过这个符号，只输出引用
-      const symbolInfo = getSymbol(result.symbolTable, symbolName);
-      const location = formatSymbolLocation(symbolInfo);
-      lines.push(`${indent}${extractSymbolName(symbolName)}${location} (已在上方详细列出)`);
-      return;
-    }
-
-    processedSymbols.add(symbolName);
     const symbolInfo = getSymbol(result.symbolTable, symbolName);
     if (!symbolInfo) return;
 
@@ -416,7 +407,13 @@ export const generateAdjacencyListReport = (result: TreeShakingResult): string =
     const location = formatSymbolLocation(symbolInfo);
     
     // 输出当前符号
-    lines.push(`${indent}${shortName}${location}:`);
+    lines.push(`${indent}${shortName}${location}`);
+    
+    // 如果已经处理过这个符号，不再展开其依赖
+    if (processedSymbols.has(symbolName)) {
+      return;
+    }
+    processedSymbols.add(symbolName);
     
     // 获取并排序依赖
     const dependencies = Array.from(symbolInfo.dependencies).sort();
