@@ -6,8 +6,8 @@ import {
   createDefaultCompilerOptions,
   performTreeShaking,
   getDiagnostics
-} from './ProjectAnalyzer.js';
-import type { TreeShakingResult } from './ProjectAnalyzer.js';
+} from './ProjectAnalyzer';
+import type { TreeShakingResult } from './ProjectAnalyzer';
 import { 
   generateDetailedReport, 
   generateSummaryReport, 
@@ -16,7 +16,7 @@ import {
   generateDependencyGraph,
   findCircularDependencies,
   findLargestSymbols
-} from './TreeShakingReporter.js';
+} from './TreeShakingReporter';
 
 /**
  * CLI选项

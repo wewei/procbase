@@ -1,6 +1,6 @@
-import type { TreeShakingResult } from './ProjectAnalyzer.js';
-import type { ProjectSymbolTableState, SymbolInfo } from './SymbolTable.js';
-import { getSymbol, getAllFiles, getFileSymbols } from './SymbolTable.js';
+import type { TreeShakingResult } from './ProjectAnalyzer';
+import type { ProjectSymbolTableState, SymbolInfo } from './SymbolTable';
+import { getSymbol, getAllFiles, getFileSymbols } from './SymbolTable';
 
 /**
  * 依赖图选项

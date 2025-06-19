@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import type { SymbolInfo, ImportInfo, ExtractedSymbols, SourceLocation } from './SymbolTable.js';
+import type { SymbolInfo, ImportInfo, ExtractedSymbols, SourceLocation } from './SymbolTable';
 
 /**
  * 从源文件中提取所有符号
