@@ -388,118 +388,224 @@ const assertSuccess = <T, E>(
 };
 ```
 
-## File Organization
+## File Organization and Architecture
 
-### ✅ Good - Module Structure
-```typescript
-// types.ts - Type definitions
-export type User = { /* ... */ };
-export type ApiResponse<T> = { /* ... */ };
+### 5. Single Responsibility File Organization
+- **One main function per file** - Each `.ts` file should have exactly one `default export` function
+- **File name matches function name** - The filename should correspond to the main function's name
+- **Internal functions are private** - Other functions in the file should be internal implementation details
+- **Folder organization by task** - Use folders to group related functions for a specific task
+- **Main function exports from index.ts** - The main task function should be exported from `index.ts` in the folder
+- **Folder name matches main function** - The folder name should correspond to the main task function name
+- **Types as named exports** - All types used by the main function and its dependencies should be exported as named exports
 
-// utils.ts - Utility functions
-export const isValidEmail = (email: string): boolean => { /* ... */ };
-export const formatUser = (user: User): string => { /* ... */ };
-
-// api.ts - API functions
-export const fetchUser = async (userId: string): Promise<Result<User, Error>> => { /* ... */ };
-
-// index.ts - Main exports
-export * from './types';
-export * from './utils';
-export * from './api';
+### ✅ Good - Single Responsibility File Structure
+```
+lang/
+├── analyzeProject/
+│   ├── index.ts                    # export default analyzeProject
+│   ├── createProgram.ts            # internal function
+│   ├── getSourceFiles.ts           # internal function
+│   ├── analyzeSourceFile.ts        # internal function
+│   └── calculateStatistics.ts      # internal function
+├── createProjectContext/
+│   ├── index.ts                    # export default createProjectContext
+│   ├── fromConfig.ts               # internal function
+│   ├── fromFiles.ts                # internal function
+│   └── createDefaultOptions.ts     # internal function
+├── performTreeShaking/
+│   ├── index.ts                    # export default performTreeShaking
+│   ├── calculateClosure.ts         # internal function
+│   ├── findUnusedSymbols.ts        # internal function
+│   ├── groupSymbolsByFile.ts       # internal function
+│   └── calculateStatistics.ts      # internal function
+└── types.ts                        # All related type definitions
 ```
 
-## Common Anti-Patterns to Avoid
-
-### ❌ Don't - Mutating Parameters
+### ✅ Good - Main Function File (index.ts)
 ```typescript
-const processUsers = (users: User[]): User[] => {
-  users.sort((a, b) => a.name.localeCompare(b.name)); // Mutates input!
-  return users;
-};
-```
+import type { ProjectAnalysisResult, ProjectAnalysisContext, AnalysisOptions } from '../types';
+import { createProgram } from './createProgram';
+import { getSourceFiles } from './getSourceFiles';
+import { analyzeSourceFile } from './analyzeSourceFile';
+import { calculateStatistics } from './calculateStatistics';
 
-### ✅ Do - Create New Objects
-```typescript
-const processUsers = (users: User[]): User[] => {
-  return [...users].sort((a, b) => a.name.localeCompare(b.name));
-};
-```
-
-### ❌ Don't - Complex Nested Logic
-```typescript
-const processData = (data: unknown): string => {
-  if (typeof data === 'string') {
-    if (data.length > 0) {
-      if (data.includes('@')) {
-        return 'email';
-      } else {
-        return 'text';
-      }
-    } else {
-      return 'empty';
-    }
-  } else {
-    return 'unknown';
-  }
-};
-```
-
-### ✅ Do - Early Returns and Guard Clauses
-```typescript
-const processData = (data: unknown): string => {
-  if (typeof data !== 'string') return 'unknown';
-  if (data.length === 0) return 'empty';
-  if (data.includes('@')) return 'email';
-  return 'text';
-};
-```
-
-## Performance Considerations
-
-### ✅ Good - Lazy Evaluation
-```typescript
 /**
- * Creates a lazy-loaded value
- * @param factory - Function to create the value
- * @returns Object with get method that returns the value
+ * Analyzes the entire project and builds symbol table and dependency relationships
+ * @param context - Project analysis context
+ * @param options - Analysis options
+ * @returns Project analysis result
  */
-const createLazyValue = <T>(factory: () => T) => {
-  let value: T | undefined;
+const analyzeProject = (
+  context: ProjectAnalysisContext,
+  options: AnalysisOptions = {}
+): ProjectAnalysisResult => {
+  const sourceFiles = getSourceFiles(context.program, context.rootFiles);
+  
+  sourceFiles.forEach(sourceFile => {
+    const fileSymbols = analyzeSourceFile(sourceFile, context.typeChecker, options);
+    // Process file symbols...
+  });
+  
+  const statistics = calculateStatistics(context.symbolTable, context.rootFiles);
+
   return {
-    get: (): T => {
-      if (value === undefined) {
-        value = factory();
-      }
-      return value;
-    }
+    symbolTable: context.symbolTable,
+    rootFiles: context.rootFiles,
+    compilerOptions: context.compilerOptions,
+    diagnostics: [],
+    statistics
   };
 };
+
+export default analyzeProject;
 ```
 
-### ✅ Good - Efficient Iteration
+### ✅ Good - Internal Function File
 ```typescript
+import ts from 'typescript';
+
 /**
- * Processes items in batches to avoid memory issues
- * @param items - Items to process
- * @param batchSize - Size of each batch
- * @param processor - Function to process each batch
- * @returns Promise resolving when all batches are processed
+ * Creates a TypeScript program
+ * @param rootFiles - List of root files
+ * @param compilerOptions - Compiler options
+ * @returns TypeScript program instance
  */
-const processInBatches = async <T, R>(
-  items: T[],
-  batchSize: number,
-  processor: (batch: T[]) => Promise<R[]>
-): Promise<R[]> => {
-  const results: R[] = [];
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await processor(batch);
-    results.push(...batchResults);
-  }
-  return results;
+const createProgram = (
+  rootFiles: string[], 
+  compilerOptions: ts.CompilerOptions = {}
+): ts.Program => {
+  return ts.createProgram(rootFiles, compilerOptions);
+};
+
+export default createProgram;
+```
+
+### ✅ Good - Type Definition File
+```typescript
+import ts from 'typescript';
+import type { ProjectSymbolTableState } from '../SymbolTable';
+
+/**
+ * Project analysis result
+ */
+export type ProjectAnalysisResult = {
+  symbolTable: ProjectSymbolTableState;
+  rootFiles: string[];
+  compilerOptions: ts.CompilerOptions;
+  diagnostics: ts.Diagnostic[];
+  statistics: ProjectStatistics;
+};
+
+/**
+ * Project statistics
+ */
+export type ProjectStatistics = {
+  totalFiles: number;
+  totalSymbols: number;
+  exportedSymbols: number;
+  internalSymbols: number;
+  importCount: number;
+  dependencyCount: number;
+};
+
+/**
+ * Analysis options
+ */
+export type AnalysisOptions = {
+  includeDeclarationFiles?: boolean;
+  includeNodeModules?: boolean;
+  includeSystemSymbols?: boolean;
+  followTypeOnlyImports?: boolean;
+  maxDepth?: number;
+};
+
+/**
+ * Project analysis context
+ */
+export type ProjectAnalysisContext = {
+  program: ts.Program;
+  typeChecker: ts.TypeChecker;
+  symbolTable: ProjectSymbolTableState;
+  rootFiles: string[];
+  compilerOptions: ts.CompilerOptions;
 };
 ```
+
+### ✅ Good - Usage Pattern
+```typescript
+// Import main functions
+import analyzeProject from './lang/analyzeProject';
+import createProjectContext from './lang/createProjectContext';
+import performTreeShaking from './lang/performTreeShaking';
+
+// Import types
+import type { 
+  ProjectAnalysisResult, 
+  TreeShakingResult,
+  ProjectAnalysisContext 
+} from './lang/types';
+
+// Usage
+const context = createProjectContext(files, options);
+const analysis = analyzeProject(context, analysisOptions);
+const treeShakingResult = performTreeShaking(analysis, entryPoints, treeShakingOptions);
+```
+
+### ❌ Bad - Mixed Responsibilities
+```typescript
+// Don't mix multiple main functions in one file
+const analyzeProject = () => { /* ... */ };
+const performTreeShaking = () => { /* ... */ };
+const createContext = () => { /* ... */ };
+
+export { analyzeProject, performTreeShaking, createContext };
+```
+
+### ❌ Bad - Inconsistent Naming
+```typescript
+// Don't use different names for file and main function
+// file: projectAnalyzer.ts
+const analyzeProject = () => { /* ... */ };
+export default analyzeProject;
+```
+
+### ❌ Bad - Exposing Internal Functions
+```typescript
+// Don't export internal implementation functions
+const createProgram = () => { /* ... */ };
+const getSourceFiles = () => { /* ... */ };
+
+export { createProgram, getSourceFiles }; // Internal functions should not be exported
+export default analyzeProject;
+```
+
+## Architecture Benefits
+
+### 1. Single Responsibility Principle
+- Each file has one clear purpose
+- Function name matches filename for clarity
+- Internal functions focus on supporting the main function
+
+### 2. Clear Dependency Relationships
+- Main functions serve as clear entry points
+- Dependencies are organized in folders
+- Type definitions are centralized and reusable
+
+### 3. Excellent Testability
+- Each main function can be tested independently
+- Internal functions are tested through the main function
+- Type definitions can be validated separately
+
+### 4. Easy Maintenance
+- Changes to internal implementation don't affect external interfaces
+- Adding new functionality just requires new folders and main functions
+- Clear separation of concerns makes debugging easier
+
+### 5. Scalable Architecture
+- New features can be added as new folders
+- Existing functionality can be extended without breaking changes
+- Clear boundaries prevent circular dependencies
 
 ## Summary
 
@@ -513,6 +619,9 @@ Follow these principles to write maintainable, functional TypeScript code:
 6. **Be immutable** - Avoid mutating data, create new objects instead
 7. **Handle errors gracefully** - Use Result types and proper error handling
 8. **Write tests** - Create test utilities and mock functions
+9. **Single responsibility files** - One main function per file with matching names
+10. **Organized folder structure** - Group related functions in folders named after main tasks
+11. **Clear type exports** - Export all types as named exports for reusability
 
-These patterns will lead to more maintainable, testable, and predictable code.
+These patterns will lead to more maintainable, testable, and predictable code with clear architectural boundaries.
 

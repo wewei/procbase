@@ -1,5 +1,5 @@
-import * as ts from 'typescript';
-import * as path from 'path';
+import ts from 'typescript';
+import path from 'path';
 import { extractSymbolsFromFile } from './SymbolExtractor';
 import type { FileSymbols } from './SymbolTable';
 import { createProjectSymbolTable, addFileSymbols, calculateClosure, findUnusedSymbols, getAllSymbols } from './SymbolTable';
