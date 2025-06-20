@@ -1,5 +1,6 @@
 import ts from 'typescript';
-import type { ExtractedSymbols, ImportInfo } from '../types';
+import type { ExtractedSymbols } from '../types/project/ExtractedSymbols';
+import type { ImportInfo } from '../types/project/ImportInfo';
 import resolveRelativePath from './resolveRelativePath';
 
 /**

@@ -8,7 +8,7 @@ import {
   performTreeShaking,
   analyzeProject
 } from '@/lang';
-import type { TreeShakingResult } from '@/lang';
+import type { TreeShakingResult } from '@/lang/types/tree-shaking/TreeShakingResult';
 import { 
   generateDetailedReport, 
   generateSummaryReport, 

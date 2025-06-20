@@ -4,8 +4,7 @@ export { default as createProjectContext, fromConfig, fromFiles, createDefaultOp
 export { default as performTreeShaking } from './performTreeShaking';
 export { default as extractSymbolsFromFile } from './extractSymbols';
 
-// Type exports
-export * from './types';
+// Symbol table exports
 export { default as createProjectSymbolTable } from './createProjectSymbolTable/index';
 export { default as addFileSymbols } from './createProjectSymbolTable/addFileSymbols';
 export { default as getSymbol } from './createProjectSymbolTable/getSymbol';

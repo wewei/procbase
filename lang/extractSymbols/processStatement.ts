@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ExtractedSymbols } from './types';
+import type { ExtractedSymbols } from '../types/project/ExtractedSymbols';
 import handleVariableStatement from './handleVariableStatement';
 import handleFunctionDeclaration from './handleFunctionDeclaration';
 import handleClassDeclaration from './handleClassDeclaration';

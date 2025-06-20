@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { SourceLocation } from '../types';
+import type { SourceLocation } from '../types/project/SourceLocation';
 
 /**
  * 获取源码位置

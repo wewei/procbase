@@ -1,5 +1,5 @@
-import type { ProjectSymbolTableState, ProjectStatistics } from '../types';
-import getAllSymbols from '../createProjectSymbolTable/getAllSymbols';
+import type { ProjectSymbolTableState } from '../types/project/ProjectSymbolTableState';
+import type { ProjectStatistics } from '../types/analysis/ProjectStatistics';
 
 /**
  * 计算项目统计信息

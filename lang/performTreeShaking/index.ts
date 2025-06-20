@@ -1,4 +1,6 @@
-import type { TreeShakingResult, TreeShakingOptions, ProjectAnalysisResult } from '../types';
+import type { TreeShakingResult } from '../types/tree-shaking/TreeShakingResult';
+import type { TreeShakingOptions } from '../types/tree-shaking/TreeShakingOptions';
+import type { ProjectAnalysisResult } from '../types/analysis/ProjectAnalysisResult';
 import calculateClosure from '../createProjectSymbolTable/calculateClosure';
 import findUnusedSymbols from '../createProjectSymbolTable/findUnusedSymbols';
 import groupSymbolsByFile from './groupSymbolsByFile';

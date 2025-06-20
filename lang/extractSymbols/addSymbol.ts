@@ -1,4 +1,5 @@
-import type { SymbolInfo, ExtractedSymbols } from '../types';
+import type { SymbolInfo } from '../types/project/SymbolInfo';
+import type { ExtractedSymbols } from '../types/project/ExtractedSymbols';
 
 /**
  * 添加符号到符号表

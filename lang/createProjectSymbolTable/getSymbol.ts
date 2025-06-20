@@ -1,4 +1,5 @@
-import type { ProjectSymbolTableState, SymbolInfo } from './types';
+import type { ProjectSymbolTableState } from '../types/project/ProjectSymbolTableState';
+import type { SymbolInfo } from '../types/project/SymbolInfo';
 
 /**
  * 获取符号信息

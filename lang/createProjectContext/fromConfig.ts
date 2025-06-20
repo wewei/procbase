@@ -1,6 +1,6 @@
 import ts from 'typescript';
 import path from 'path';
-import type { ProjectAnalysisContext } from '../types';
+import type { ProjectAnalysisContext } from '../types/analysis/ProjectAnalysisContext';
 import createProjectSymbolTable from '../createProjectSymbolTable/index';
 import createProgram from '../analyzeProject/createProgram';
 

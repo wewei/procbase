@@ -1,6 +1,6 @@
 import ts from 'typescript';
 import path from 'node:path';
-import type { SymbolInfo } from '../types';
+import type { SymbolInfo } from '../types/project/SymbolInfo';
 import getSourceLocation from './getSourceLocation';
 
 /**

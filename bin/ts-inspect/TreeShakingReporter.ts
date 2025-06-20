@@ -1,5 +1,6 @@
-import type { TreeShakingResult } from '../../lang';
-import type { ProjectSymbolTableState, SymbolInfo } from '../../lang/types';
+import type { TreeShakingResult } from '../../lang/types/tree-shaking/TreeShakingResult';
+import type { ProjectSymbolTableState } from '../../lang/types/project/ProjectSymbolTableState';
+import type { SymbolInfo } from '../../lang/types/project/SymbolInfo';
 import getSymbol from '../../lang/createProjectSymbolTable/getSymbol';
 import getAllFiles from '../../lang/createProjectSymbolTable/getAllFiles';
 import getFileSymbols from '../../lang/createProjectSymbolTable/getFileSymbols';
