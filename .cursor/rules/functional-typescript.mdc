@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # Functional TypeScript Rules
 
@@ -624,4 +624,10 @@ Follow these principles to write maintainable, functional TypeScript code:
 11. **Clear type exports** - Export all types as named exports for reusability
 
 These patterns will lead to more maintainable, testable, and predictable code with clear architectural boundaries.
+
+## Import Style
+
+- **Do not use `import * as ...`** — Always import specific named exports or default exports only.
+- **Prefer**: `import { foo } from './bar'` or `import foo from './bar'`
+- **Avoid**: `import * as bar from './bar'`
 

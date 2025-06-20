@@ -1,4 +1,4 @@
-import * as ts from 'typescript';
+import ts from 'typescript';
 import type { ExtractedSymbols, ImportInfo } from './types';
 import resolveRelativePath from './resolveRelativePath';
 

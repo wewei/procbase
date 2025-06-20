@@ -1,4 +1,4 @@
-import * as ts from 'typescript';
+import ts from 'typescript';
 import path from 'node:path';
 import type { SymbolInfo } from './types';
 import getSourceLocation from './getSourceLocation';

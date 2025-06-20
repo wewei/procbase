@@ -1,5 +1,5 @@
-import * as path from 'path';
-import * as fs from 'fs';
+import { join, resolve, dirname, basename, extname } from 'path';
+import { readFileSync, existsSync, statSync, readdirSync, writeFileSync, unlinkSync } from 'fs';
 import { 
   createProjectContext,
   fromConfig, 
@@ -76,7 +76,7 @@ export const runAnalysis = async (options: CLIOptions): Promise<void> => {
     if (analysisResult.diagnostics.length > 0) {
       console.warn('⚠️  发现编译错误:');
       analysisResult.diagnostics.forEach((d: any) => {
-        const file = d.file ? path.basename(d.file.fileName) : '未知文件';
+        const file = d.file ? basename(d.file.fileName) : '未知文件';
         const line = d.file && d.start ? d.file.getLineAndCharacterOfPosition(d.start).line + 1 : '?';
         console.warn(`  ${file}:${line} - ${d.messageText}`);
       });
@@ -152,13 +152,20 @@ const saveReports = async (
   outputPath: string, 
   formats: ReportFormat[]
 ): Promise<void> => {
-  const baseDir = path.dirname(outputPath);
-  const baseName = path.basename(outputPath, path.extname(outputPath));
+  const baseDir = dirname(outputPath);
+  const baseName = basename(outputPath, extname(outputPath));
 
   // 确保输出目录存在
-  if (baseDir && baseDir !== '.' && !fs.existsSync(baseDir)) {
+  if (baseDir && baseDir !== '.' && !existsSync(baseDir)) {
     try {
-      fs.mkdirSync(baseDir, { recursive: true });
+      readdirSync(baseDir, { withFileTypes: true }).forEach(dirent => {
+        if (!dirent.isDirectory()) {
+          const filePath = join(baseDir, dirent.name);
+          if (existsSync(filePath)) {
+            unlinkSync(filePath);
+          }
+        }
+      });
     } catch (error) {
       console.warn(`⚠️  无法创建目录 ${baseDir}: ${error instanceof Error ? error.message : error}`);
       return;
@@ -194,9 +201,9 @@ const saveReports = async (
         continue;
     }
 
-    const filePath = path.join(baseDir, `${baseName}${extension}`);
+    const filePath = join(baseDir, `${baseName}${extension}`);
     try {
-      fs.writeFileSync(filePath, content, 'utf8');
+      writeFileSync(filePath, content, 'utf8');
       console.log(`📄 报告已保存: ${filePath}`);
     } catch (error) {
       console.error(`❌ 保存报告失败 ${filePath}: ${error instanceof Error ? error.message : error}`);
