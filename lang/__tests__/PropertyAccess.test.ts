@@ -1,6 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import * as ts from 'typescript';
-import { extractSymbolsFromFile } from '../SymbolExtractor';
+import extractSymbolsFromFile from '../extractSymbols';
 import { createSingleFileProgram } from './helpers/TestProgram';
 
 describe('Property Access Dependency Analysis', () => {

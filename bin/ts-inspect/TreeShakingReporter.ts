@@ -1,4 +1,4 @@
-import type { TreeShakingResult } from '../../lang/ProjectAnalyzer';
+import type { TreeShakingResult } from '../../lang';
 import type { ProjectSymbolTableState, SymbolInfo } from '../../lang/SymbolTable';
 import { getSymbol, getAllFiles, getFileSymbols } from '../../lang/SymbolTable';
 

@@ -5,7 +5,6 @@
   "main": "index.ts",
   "scripts": {
     "test": "bun test",
-    "test:simple": "bun run __tests__/SymbolExtractor.simple.test.ts",
     "test:deps": "bun run __tests__/DependencyTest.ts"
   },
   "dependencies": {

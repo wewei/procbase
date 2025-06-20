@@ -1,11 +1,11 @@
-import * as ts from 'typescript';
+import ts from 'typescript';
 import path from 'node:path';
-import type { SymbolInfo, ImportInfo, ExtractedSymbols, SourceLocation } from './SymbolTable';
+import type { ExtractedSymbols, SymbolInfo, ImportInfo, SourceLocation } from '../createProjectSymbolTable/types';
 
 /**
  * 符号提取选项
  */
-export type SymbolExtractionOptions = {
+type SymbolExtractionOptions = {
   includeNodeModules: boolean;  // 是否包含 node_modules 中的依赖
   includeSystemSymbols: boolean;  // 是否包含系统符号
 };
@@ -17,7 +17,7 @@ export type SymbolExtractionOptions = {
  * @param options - 符号提取选项
  * @returns 提取的符号集合
  */
-export const extractSymbolsFromFile = (
+const extractSymbolsFromFile = (
   sourceFile: ts.SourceFile,
   typeChecker: ts.TypeChecker,
   options: SymbolExtractionOptions = { includeNodeModules: false, includeSystemSymbols: false }
@@ -563,3 +563,6 @@ const resolveRelativePath = (fromPath: string, toPath: string): string => {
   }
   return toPath;
 };
+
+export default extractSymbolsFromFile;
+export type { SymbolExtractionOptions }; 

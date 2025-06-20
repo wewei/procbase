@@ -1,13 +1,14 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { 
-  createProjectAnalysisContextFromConfig, 
-  createProjectAnalysisContextFromFiles, 
-  createDefaultCompilerOptions,
+  createProjectContext,
+  fromConfig, 
+  fromFiles, 
+  createDefaultOptions,
   performTreeShaking,
-  getDiagnostics
-} from '@/lang/ProjectAnalyzer';
-import type { TreeShakingResult } from '@/lang/ProjectAnalyzer';
+  analyzeProject
+} from '@/lang';
+import type { TreeShakingResult } from '@/lang';
 import { 
   generateDetailedReport, 
   generateSummaryReport, 
@@ -56,20 +57,25 @@ export const runAnalysis = async (options: CLIOptions): Promise<void> => {
     
     if (options.config) {
       console.log(`📝 使用配置文件: ${options.config}`);
-      context = createProjectAnalysisContextFromConfig(options.config);
+      context = fromConfig(options.config);
     } else if (options.files && options.files.length > 0) {
       console.log(`📂 分析文件: ${options.files.join(', ')}`);
-      const compilerOptions = options.compilerOptions || createDefaultCompilerOptions();
-      context = createProjectAnalysisContextFromFiles(options.files, compilerOptions);
+      const compilerOptions = options.compilerOptions || createDefaultOptions();
+      context = fromFiles(options.files, compilerOptions);
     } else {
       throw new Error('必须指定配置文件或文件列表');
     }
 
+    // 执行项目分析
+    const analysisResult = analyzeProject(context, {
+      includeNodeModules: options.includeNodeModules,
+      includeSystemSymbols: options.includeSystemSymbols
+    });
+
     // 检查编译错误
-    const diagnostics = getDiagnostics(context.program);
-    if (diagnostics.length > 0) {
+    if (analysisResult.diagnostics.length > 0) {
       console.warn('⚠️  发现编译错误:');
-      diagnostics.forEach(d => {
+      analysisResult.diagnostics.forEach((d: any) => {
         const file = d.file ? path.basename(d.file.fileName) : '未知文件';
         const line = d.file && d.start ? d.file.getLineAndCharacterOfPosition(d.start).line + 1 : '?';
         console.warn(`  ${file}:${line} - ${d.messageText}`);
@@ -81,10 +87,10 @@ export const runAnalysis = async (options: CLIOptions): Promise<void> => {
       console.log('');
     }
 
-    // 执行分析
-    const result = performTreeShaking(context, options.entryPoints, {
-      includeNodeModules: options.includeNodeModules,
-      includeSystemSymbols: options.includeSystemSymbols
+    // 执行 Tree Shaking 分析
+    const result = performTreeShaking(analysisResult, options.entryPoints, {
+      includeInternalSymbols: options.includeNodeModules,
+      followTypeOnlyImports: options.includeSystemSymbols
     });
     
     console.log('✅ 分析完成!');
