@@ -1,4 +1,4 @@
-import type { ProjectSymbolTableState } from '../SymbolTable/types';
+import type { ProjectSymbolTableState } from '../createProjectSymbolTable/types';
 
 /**
  * 按文件分组符号

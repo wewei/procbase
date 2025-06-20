@@ -1,5 +1,5 @@
 import type { ProjectSymbolTableState, TreeShakingStatistics } from '../types';
-import getAllSymbols from '../SymbolTable/getAllSymbols';
+import getAllSymbols from '../createProjectSymbolTable/getAllSymbols';
 
 /**
  * 计算统计信息

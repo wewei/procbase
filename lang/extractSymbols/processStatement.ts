@@ -1,4 +1,4 @@
-import type ts from 'typescript';
+import * as ts from 'typescript';
 import type { ExtractedSymbols } from './types';
 import handleVariableStatement from './handleVariableStatement';
 import handleFunctionDeclaration from './handleFunctionDeclaration';
