@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ExtractedSymbols } from './types';
+import type { ExtractedSymbols } from '../types';
 
 /**
  * 处理导出声明

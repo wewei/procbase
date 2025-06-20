@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ExtractedSymbols, SymbolInfo } from './types';
+import type { ExtractedSymbols, SymbolInfo } from '../types';
 import type { SymbolExtractionOptions } from './index';
 import findSymbolDependencies from './findSymbolDependencies';
 

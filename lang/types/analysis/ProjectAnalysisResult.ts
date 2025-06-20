@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ProjectSymbolTableState } from '../../createProjectSymbolTable/types/ProjectSymbolTableState';
+import type { ProjectSymbolTableState } from '../project/ProjectSymbolTableState';
 import type { ProjectStatistics } from './ProjectStatistics';
 
 /**

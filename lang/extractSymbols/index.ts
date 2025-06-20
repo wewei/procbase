@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ExtractedSymbols } from '../createProjectSymbolTable/types';
+import type { ExtractedSymbols } from '../types';
 import processStatement from './processStatement';
 import calculateDependencies from './calculateDependencies';
 

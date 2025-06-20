@@ -1,4 +1,4 @@
-import type { ProjectSymbolTableState } from '../../createProjectSymbolTable/types/ProjectSymbolTableState';
+import type { ProjectSymbolTableState } from '../project/ProjectSymbolTableState';
 import type { TreeShakingStatistics } from './TreeShakingStatistics';
 
 /**

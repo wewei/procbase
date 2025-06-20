@@ -1,4 +1,4 @@
-import type { SymbolInfo, ExtractedSymbols } from './types';
+import type { SymbolInfo, ExtractedSymbols } from '../types';
 
 /**
  * 添加符号到符号表

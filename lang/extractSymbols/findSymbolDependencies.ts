@@ -1,6 +1,6 @@
 import ts from 'typescript';
 import path from 'node:path';
-import type { ExtractedSymbols } from './types';
+import type { ExtractedSymbols } from '../types';
 import type { SymbolExtractionOptions } from './index';
 
 /**

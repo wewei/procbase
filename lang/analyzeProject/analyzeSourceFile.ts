@@ -1,7 +1,6 @@
 import ts from 'typescript';
 import extractSymbolsFromFile from '../extractSymbols';
-import type { FileSymbols } from '../createProjectSymbolTable/types';
-import type { AnalysisOptions } from '../types';
+import type { FileSymbols, AnalysisOptions } from '../types';
 
 /**
  * 分析单个源文件

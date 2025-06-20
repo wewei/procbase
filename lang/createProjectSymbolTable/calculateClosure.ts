@@ -1,4 +1,4 @@
-import type { ProjectSymbolTableState } from './types/ProjectSymbolTableState';
+import type { ProjectSymbolTableState } from '../types';
 import getDependencies from './getDependencies';
 
 /**

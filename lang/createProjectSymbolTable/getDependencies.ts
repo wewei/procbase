@@ -1,4 +1,4 @@
-import type { ProjectSymbolTableState } from './types';
+import type { ProjectSymbolTableState } from '../types';
 
 /**
  * 获取符号的直接依赖
