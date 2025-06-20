@@ -11,4 +11,12 @@ const createProjectSymbolTable = (): ProjectSymbolTableState => ({
   reverseDependencies: new Map()
 });
 
-export default createProjectSymbolTable; 
+export default createProjectSymbolTable;
+
+export type { SymbolInfo } from './types/SymbolInfo';
+export type { ImportInfo } from './types/ImportInfo';
+export type { SourceLocation } from './types/SourceLocation';
+export type { ExtractedSymbols } from './types/ExtractedSymbols';
+export type { FileSymbols } from './types/FileSymbols';
+export type { ProjectSymbolTableState } from './types/ProjectSymbolTableState';
+export type { SymbolExtractionOptions } from '../extractSymbols/types/SymbolExtractionOptions'; 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import * as ts from 'typescript';
-import extractSymbolsFromFile from '../extractSymbols';
-import { createProjectSymbolTable, addFileSymbols, calculateClosure } from '../SymbolTable';
+import extractSymbolsFromFile from '../extractSymbols/index';
+import { createProjectSymbolTable, addFileSymbols, calculateClosure } from '../index';
 import { createMultiFileProgram } from './helpers/TestProgram';
 
 /**
