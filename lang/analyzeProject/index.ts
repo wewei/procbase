@@ -1,6 +1,5 @@
 import type { ProjectAnalysisResult, ProjectAnalysisContext, AnalysisOptions } from '../types';
-import { addFileSymbols } from '../SymbolTable';
-import createProgram from './createProgram';
+import addFileSymbols from '../createProjectSymbolTable/addFileSymbols';
 import getSourceFiles from './getSourceFiles';
 import analyzeSourceFile from './analyzeSourceFile';
 import calculateStatistics from './calculateStatistics';

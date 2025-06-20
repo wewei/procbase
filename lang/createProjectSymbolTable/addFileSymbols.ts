@@ -1,4 +1,5 @@
-import type { ProjectSymbolTableState, FileSymbols } from './types';
+import type { ProjectSymbolTableState } from './types/ProjectSymbolTableState';
+import type { FileSymbols } from './types/FileSymbols';
 
 /**
  * 添加文件符号到符号表
