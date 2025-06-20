@@ -24,8 +24,8 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
-      "@/*": ["./*"],
-      "@types/*": ["./lang/types/*"]
+      "@f/*": ["./functions/*"],
+      "@t/*": ["./types/*"]
     }
   }
 }

@@ -1,9 +1,9 @@
-import type { TreeShakingResult } from '../../lang/types/tree-shaking/TreeShakingResult';
-import type { ProjectSymbolTableState } from '../../lang/types/project/ProjectSymbolTableState';
-import type { SymbolInfo } from '../../lang/types/project/SymbolInfo';
-import getSymbol from '../../lang/createProjectSymbolTable/getSymbol';
-import getAllFiles from '../../lang/createProjectSymbolTable/getAllFiles';
-import getFileSymbols from '../../lang/createProjectSymbolTable/getFileSymbols';
+import type { TreeShakingResult } from '@t/tree-shaking/TreeShakingResult';
+import type { ProjectSymbolTableState } from '@t/project/ProjectSymbolTableState';
+import type { SymbolInfo } from '@t/project/SymbolInfo';
+import getSymbol from '@f/createProjectSymbolTable/getSymbol';
+import getAllFiles from '@f/createProjectSymbolTable/getAllFiles';
+import getFileSymbols from '@f/createProjectSymbolTable/getFileSymbols';
 
 /**
  * 依赖图选项

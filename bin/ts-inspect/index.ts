@@ -1,14 +1,11 @@
-import { join, resolve, dirname, basename, extname } from 'path';
-import { readFileSync, existsSync, statSync, readdirSync, writeFileSync, unlinkSync } from 'fs';
-import { 
-  createProjectContext,
-  fromConfig, 
-  fromFiles, 
-  createDefaultOptions,
-  performTreeShaking,
-  analyzeProject
-} from '@/lang';
-import type { TreeShakingResult } from '@/lang/types/tree-shaking/TreeShakingResult';
+import { join, dirname, basename, extname } from 'path';
+import { existsSync, readdirSync, writeFileSync, unlinkSync } from 'fs';
+import analyzeProject from '@f/analyzeProject';
+import performTreeShaking from '@f/performTreeShaking';
+import createDefaultOptions from '@f/createProjectContext/createDefaultOptions';
+import fromConfig from '@f/createProjectContext/fromConfig';
+import fromFiles from '@f/createProjectContext/fromFiles';
+import type { TreeShakingResult } from '@t/tree-shaking/TreeShakingResult';
 import { 
   generateDetailedReport, 
   generateSummaryReport, 
