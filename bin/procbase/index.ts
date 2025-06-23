@@ -3,6 +3,9 @@ import { Command } from 'commander';
 import { createProcbase } from './create';
 import { deleteProcbase } from './delete';
 import { listProcbases } from './list';
+import { startServer } from './server/start';
+import { stopServer } from './server/stop';
+import { restartServer } from './server/restart';
 
 const program = new Command();
 
@@ -47,24 +50,21 @@ program
     .command('start')
     .description('Start the MCP server')
     .action(() => {
-        // TODO: Implement starting the server
-        console.log('Starting MCP server...');
+        startServer();
     });
 
 program
     .command('stop')
     .description('Stop the MCP server')
     .action(() => {
-        // TODO: Implement stopping the server
-        console.log('Stopping MCP server...');
+        stopServer();
     });
 
 program
     .command('restart')
     .description('Restart the MCP server')
     .action(() => {
-        // TODO: Implement restarting the server
-        console.log('Restarting MCP server...');
+        restartServer();
     });
 
 const typeCommand = program.command('type').description('Manage types');
