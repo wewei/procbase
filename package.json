@@ -3,7 +3,8 @@
   "module": "index.ts",
   "type": "module",
   "bin": {
-    "ts-inspect": "./bin/ts-inspect/index.ts"
+    "ts-inspect": "./bin/ts-inspect/index.ts",
+    "procbase": "./bin/procbase/index.ts"
   },
   "scripts": {
     "inspect": "bun bin/ts-inspect/index.ts"
@@ -15,7 +16,9 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/commander": "^2.12.5",
     "@typescript/vfs": "^1.6.1",
+    "commander": "^14.0.0",
     "ts-morph": "^26.0.0"
   }
 }
