@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import { getPidFilePath, isServerRunning } from './common';
-import { execSync } from 'node:child_process';
 
 export const stopServer = () => {
   const serverState = isServerRunning();
@@ -17,7 +16,10 @@ export const stopServer = () => {
 
   const pid = serverState.pid;
   try {
-    execSync(`taskkill /F /PID ${pid}`);
+    // process.kill is cross-platform.
+    // On POSIX systems, it sends a SIGTERM signal for graceful shutdown.
+    // On Windows, it terminates the process.
+    process.kill(pid, 'SIGTERM');
     console.log(`Successfully stopped server with PID: ${pid}`);
   } catch (error) {
     // The process might already be gone.

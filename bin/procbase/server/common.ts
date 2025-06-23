@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
 
 export const getProcbaseDefaultRoot = (): string => {
   return path.join(os.homedir(), '.procbase');
@@ -30,16 +29,13 @@ export const isServerRunning = (): { running: boolean; pid: number | null } => {
   }
 
   try {
-    const command = `tasklist /FI "PID eq ${pid}"`;
-    const output = execSync(command).toString();
-
-    if (output.includes(pid.toString())) {
-      return { running: true, pid };
-    } else {
-      fs.unlinkSync(pidPath);
-      return { running: false, pid: null };
-    }
+    // On Unix, process.kill with signal 0 tests if the process exists.
+    // On Windows, it will throw an error if the process does not exist, and do nothing if it does.
+    process.kill(pid, 0);
+    return { running: true, pid };
   } catch (error) {
+    // If the process does not exist, an error is thrown. We can safely assume
+    // the server is not running and clean up the stale PID file.
     try {
         fs.unlinkSync(pidPath);
     } catch(e) {
