@@ -1,5 +1,8 @@
 #!/usr/bin/env bun
 import { Command } from 'commander';
+import { createProcbase } from './create';
+import { deleteProcbase } from './delete';
+import { listProcbases } from './list';
 
 const program = new Command();
 
@@ -13,8 +16,7 @@ program
     .description('Create a new procbase')
     .argument('<name>', 'Name of the procbase to create')
     .action((name) => {
-        // TODO: Implement procbase creation
-        console.log(`Creating procbase: ${name}`);
+        createProcbase(name);
     });
 
 program
@@ -22,16 +24,14 @@ program
     .description('Delete a procbase')
     .argument('<name>', 'Name of the procbase to delete')
     .action((name) => {
-        // TODO: Implement procbase deletion
-        console.log(`Deleting procbase: ${name}`);
+        deleteProcbase(name);
     });
 
 program
     .command('list')
     .description('List all procbases')
     .action(() => {
-        // TODO: Implement listing procbases
-        console.log('Listing all procbases');
+        listProcbases();
     });
 
 program
