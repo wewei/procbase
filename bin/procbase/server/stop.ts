@@ -1,14 +1,14 @@
 import fs from 'node:fs';
-import { getPidFilePath, isServerRunning } from './common';
+import { getServerStatusFilePath, isServerRunning } from './common';
 
 export const stopServer = () => {
   const serverState = isServerRunning();
   if (!serverState.running || !serverState.pid) {
     console.log("Server is not running.");
-    // In case there is a stale pid file
+    // In case there are stale files
     try {
-        if(fs.existsSync(getPidFilePath())) {
-            fs.unlinkSync(getPidFilePath());
+        if(fs.existsSync(getServerStatusFilePath())) {
+            fs.unlinkSync(getServerStatusFilePath());
         }
     } catch(e) {}
     return;
@@ -25,9 +25,9 @@ export const stopServer = () => {
     // The process might already be gone.
     console.log(`Server with PID ${pid} was not found or could not be stopped. It may have already been terminated.`);
   } finally {
-    // Always try to remove the pid file
+    // Always try to remove the status files
     try {
-        fs.unlinkSync(getPidFilePath());
+        fs.unlinkSync(getServerStatusFilePath());
     } catch(e) {}
   }
 }; 

@@ -4,6 +4,7 @@ import { createProcbase } from './create';
 import { deleteProcbase } from './delete';
 import { listProcbases } from './list';
 import { useProcbase } from './use';
+import { showServerStatus } from './status';
 import { startServer } from './server/start';
 import { stopServer } from './server/stop';
 import { restartServer } from './server/restart';
@@ -65,6 +66,13 @@ program
     .description('Restart the MCP server')
     .action(() => {
         restartServer();
+    });
+
+program
+    .command('status')
+    .description('Show MCP server status')
+    .action(() => {
+        showServerStatus();
     });
 
 const typeCommand = program.command('type').description('Manage types');

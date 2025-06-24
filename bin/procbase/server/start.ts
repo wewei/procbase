@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getPidFilePath, isServerRunning } from './common';
+import { getServerStatusFilePath, isServerRunning } from './common';
 
 export const startServer = () => {
   const serverState = isServerRunning();
@@ -26,7 +26,11 @@ export const startServer = () => {
   child.unref();
 
   if (child.pid) {
-    fs.writeFileSync(getPidFilePath(), child.pid.toString());
+    // Write to new status file only
+    const statusFile = getServerStatusFilePath();
+    const status = { pid: child.pid, port: 8192 }; // Default port, will be updated by server
+    fs.writeFileSync(statusFile, JSON.stringify(status, null, 2));
+    
     console.log(`Server started successfully with PID: ${child.pid}`);
   } else {
     console.error("Failed to start server: Could not get PID.");

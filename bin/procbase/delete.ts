@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { isServerRunning } from './server/common';
+import { restartServer } from './server/restart';
 
 const getProcbaseRoot = (): string => {
   if (process.env.PROCBASE_ROOT) {
@@ -56,6 +58,12 @@ export const deleteProcbase = (name: string) => {
     
     if (isCurrent) {
       console.log('No procbase is currently active.');
+      // Restart the MCP server if it's running
+      const serverState = isServerRunning();
+      if (serverState.running) {
+        console.log('Restarting MCP server since the current procbase was deleted...');
+        restartServer();
+      }
     }
   } catch (error) {
     console.error(`\nFailed to delete procbase '${name}'.`);

@@ -5,16 +5,10 @@ import fs from 'node:fs';
 import { createProcbase } from '../bin/procbase/create';
 import { FastMCP } from 'fastmcp';
 
-const getProcbaseRoot = (): string => {
-  if (process.env.PROCBASE_ROOT) {
-    return process.env.PROCBASE_ROOT;
-  }
-  return path.join(os.homedir(), '.procbase');
-};
+const PROCBASE_ROOT = process.env.PROCBASE_ROOT || path.join(os.homedir(), '.procbase');
 
 const getCurrentProcbase = (): string => {
-  const rootDir = getProcbaseRoot();
-  const currentSymlinkPath = path.join(rootDir, '__current__');
+  const currentSymlinkPath = path.join(PROCBASE_ROOT, '__current__');
   
   if (!fs.existsSync(currentSymlinkPath)) {
     throw new Error(`No current procbase found. Please use 'procbase use <name>' to set a current procbase.`);
@@ -25,6 +19,16 @@ const getCurrentProcbase = (): string => {
     return realPath;
   } catch (error) {
     throw new Error(`Invalid current procbase symlink. Please use 'procbase use <name>' to set a valid current procbase.`);
+  }
+};
+
+const writeServerStatus = (pid: number, port: number) => {
+  const statusFile = path.join(PROCBASE_ROOT, 'server-status.json');
+  const status = { pid, port };
+  try {
+    fs.writeFileSync(statusFile, JSON.stringify(status, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to write server-status.json file:', err);
   }
 };
 
@@ -61,6 +65,9 @@ server.start({
     port: port,
   },
 });
+
+// Write server status after successful start
+writeServerStatus(process.pid, port);
 
 console.log(`MCP Server is running on port ${port}`);
 console.log(`Serving procbase from: ${root}`); 
