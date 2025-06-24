@@ -2,13 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
-
-const getProcbaseRoot = (): string => {
-  if (process.env.PROCBASE_ROOT) {
-    return process.env.PROCBASE_ROOT;
-  }
-  return path.join(os.homedir(), '.procbase');
-};
+import { getProcbaseRoot } from '../../common/paths';
 
 const createPackageJson = (procbaseName: string): string => {
     const content = {

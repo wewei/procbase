@@ -1,8 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
-
-const PROCBASE_ROOT = process.env.PROCBASE_ROOT || path.join(os.homedir(), '.procbase');
+import { getProcbaseRoot } from '../../../common/paths';
 
 type ServerStatus = {
   pid: number;
@@ -10,14 +8,15 @@ type ServerStatus = {
 };
 
 export const getProcbaseDefaultRoot = (): string => {
-  return PROCBASE_ROOT;
+  return getProcbaseRoot();
 };
 
 export const getServerStatusFilePath = (): string => {
-  if (!fs.existsSync(PROCBASE_ROOT)) {
-      fs.mkdirSync(PROCBASE_ROOT, { recursive: true });
+  const rootDir = getProcbaseRoot();
+  if (!fs.existsSync(rootDir)) {
+      fs.mkdirSync(rootDir, { recursive: true });
   }
-  return path.join(PROCBASE_ROOT, 'server-status.json');
+  return path.join(rootDir, 'server-status.json');
 };
 
 export const isServerRunning = (): { running: boolean; pid: number | null } => {

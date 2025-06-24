@@ -1,9 +1,7 @@
 import { isServerRunning } from './server/common';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
-
-const PROCBASE_ROOT = process.env.PROCBASE_ROOT || path.join(os.homedir(), '.procbase');
+import { getProcbaseRoot } from '../../common/paths';
 
 type ServerStatus = {
   pid: number;
@@ -11,7 +9,8 @@ type ServerStatus = {
 };
 
 const getServerStatus = (): ServerStatus | null => {
-  const statusFile = path.join(PROCBASE_ROOT, 'server-status.json');
+  const rootDir = getProcbaseRoot();
+  const statusFile = path.join(rootDir, 'server-status.json');
   if (fs.existsSync(statusFile)) {
     try {
       const content = fs.readFileSync(statusFile, 'utf8');

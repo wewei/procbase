@@ -1,15 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { restartServer } from './server/restart';
 import { isServerRunning } from './server/common';
-
-const getProcbaseRoot = (): string => {
-  if (process.env.PROCBASE_ROOT) {
-    return process.env.PROCBASE_ROOT;
-  }
-  return path.join(os.homedir(), '.procbase');
-};
+import { getProcbaseRoot } from '../../common/paths';
 
 export const useProcbase = (name: string) => {
   const rootDir = getProcbaseRoot();

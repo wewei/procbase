@@ -4,26 +4,12 @@ import os from 'node:os';
 import fs from 'node:fs';
 import { createProcbase } from '../bin/procbase/create';
 import { FastMCP } from 'fastmcp';
-
-const PROCBASE_ROOT = process.env.PROCBASE_ROOT || path.join(os.homedir(), '.procbase');
-
-const getCurrentProcbase = (): string => {
-  const currentSymlinkPath = path.join(PROCBASE_ROOT, '__current__');
-  
-  if (!fs.existsSync(currentSymlinkPath)) {
-    throw new Error(`No current procbase found. Please use 'procbase use <name>' to set a current procbase.`);
-  }
-
-  try {
-    const realPath = fs.realpathSync(currentSymlinkPath);
-    return realPath;
-  } catch (error) {
-    throw new Error(`Invalid current procbase symlink. Please use 'procbase use <name>' to set a valid current procbase.`);
-  }
-};
+import { addType, updateType } from './tools';
+import { getCurrentProcbase } from '../common/paths';
 
 const writeServerStatus = (pid: number, port: number) => {
-  const statusFile = path.join(PROCBASE_ROOT, 'server-status.json');
+  const procbaseRoot = getCurrentProcbase();
+  const statusFile = path.join(path.dirname(procbaseRoot), 'server-status.json');
   const status = { pid, port };
   try {
     fs.writeFileSync(statusFile, JSON.stringify(status, null, 2), 'utf8');
@@ -58,6 +44,11 @@ const server = new FastMCP({
     name: path.basename(root),
     version: '1.0.0',
 });
+
+// TODO: Add MCP tools for type management
+// - add_type: Add a new type to the procbase
+// - update_type: Update an existing type
+// - search_types: Search for types (literal and semantic)
 
 server.start({
   transportType: "httpStream",

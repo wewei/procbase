@@ -1,15 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { isServerRunning } from './server/common';
 import { restartServer } from './server/restart';
-
-const getProcbaseRoot = (): string => {
-  if (process.env.PROCBASE_ROOT) {
-    return process.env.PROCBASE_ROOT;
-  }
-  return path.join(os.homedir(), '.procbase');
-};
+import { getProcbaseRoot } from '../../common/paths';
 
 const getCurrentProcbase = (rootDir: string): string | null => {
   const currentSymlinkPath = path.join(rootDir, '__current__');
