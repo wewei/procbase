@@ -5,26 +5,45 @@ import fs from 'node:fs';
 import { createProcbase } from '../bin/procbase/create';
 import { FastMCP } from 'fastmcp';
 
+const getProcbaseRoot = (): string => {
+  if (process.env.PROCBASE_ROOT) {
+    return process.env.PROCBASE_ROOT;
+  }
+  return path.join(os.homedir(), '.procbase');
+};
+
+const getCurrentProcbase = (): string => {
+  const rootDir = getProcbaseRoot();
+  const currentSymlinkPath = path.join(rootDir, '__current__');
+  
+  if (!fs.existsSync(currentSymlinkPath)) {
+    throw new Error(`No current procbase found. Please use 'procbase use <name>' to set a current procbase.`);
+  }
+
+  try {
+    const realPath = fs.realpathSync(currentSymlinkPath);
+    return realPath;
+  } catch (error) {
+    throw new Error(`Invalid current procbase symlink. Please use 'procbase use <name>' to set a valid current procbase.`);
+  }
+};
+
 const program = new Command();
 
 program
   .option('-p, --port <number>', 'Port for the MCP server', '8192')
-  .option('-r, --root <path>', 'Root directory for the procbase', path.join(os.homedir(), '.procbase', 'default'))
   .parse(process.argv);
 
 const options = program.opts();
 const port = parseInt(options.port, 10);
-const root = options.root;
 
-// Ensure the root procbase directory exists
-if (!fs.existsSync(root)) {
-  console.log(`Procbase root at '${root}' does not exist. Creating it...`);
-  const procbaseName = path.basename(root);
-  // Temporarily set PROCBASE_ROOT to the parent directory of the intended root
-  process.env.PROCBASE_ROOT = path.dirname(root);
-  createProcbase(procbaseName);
-  // Unset the temporary environment variable
-  delete process.env.PROCBASE_ROOT;
+// Get the current procbase directory
+let root: string;
+try {
+  root = getCurrentProcbase();
+} catch (error) {
+  console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+  process.exit(1);
 }
 
 // Per fastmcp convention, run the server from within the root directory.
