@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { createSymbolDB } from '../storage/SymbolDB';
 import extractSymbolsFromFile from '../functions/extractSymbols';
 import createProjectContext from '../functions/createProjectContext';
+import { getCurrentProcbase } from '../common/paths';
 
 export type CodeAnalyzer = {
   analyzeFile(filePath: string): Promise<{ success: boolean; message: string; symbols?: any }>;
@@ -11,6 +12,58 @@ export type CodeAnalyzer = {
   getSymbols(filePath: string): any;
   getDependencies(symbolName: string): string[];
   getDependents(symbolName: string): string[];
+};
+
+const loadTsConfig = (procbaseRoot: string): ts.CompilerOptions => {
+  const tsConfigPath = path.join(procbaseRoot, 'tsconfig.json');
+  
+  if (!fs.existsSync(tsConfigPath)) {
+    // Fallback to default options if tsconfig.json doesn't exist
+    return {
+      target: ts.ScriptTarget.ESNext,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      strict: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      forceConsistentCasingInFileNames: true
+    };
+  }
+
+  try {
+    const configFileText = fs.readFileSync(tsConfigPath, 'utf8');
+    const configFile = ts.parseConfigFileTextToJson(tsConfigPath, configFileText);
+    
+    if (configFile.error) {
+      throw new Error(`Failed to parse tsconfig.json: ${configFile.error.messageText}`);
+    }
+
+    const parsedConfig = ts.parseJsonConfigFileContent(
+      configFile.config,
+      ts.sys,
+      procbaseRoot,
+      undefined,
+      tsConfigPath
+    );
+
+    if (parsedConfig.errors.length > 0) {
+      console.warn('TypeScript config warnings:', parsedConfig.errors.map(e => e.messageText));
+    }
+
+    return parsedConfig.options;
+  } catch (error) {
+    console.warn(`Failed to load tsconfig.json from ${procbaseRoot}, using defaults:`, error);
+    // Fallback to default options
+    return {
+      target: ts.ScriptTarget.ESNext,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      strict: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      forceConsistentCasingInFileNames: true
+    };
+  }
 };
 
 export const createCodeAnalyzer = (dbPath: string): CodeAnalyzer => {
@@ -26,20 +79,12 @@ export const createCodeAnalyzer = (dbPath: string): CodeAnalyzer => {
         return { success: false, message: `File not found: ${filePath}` };
       }
 
-      // Create a simple project context for single file analysis
-      const projectRoot = path.dirname(filePath);
-      const context = createProjectContext(
-        [filePath],
-        {
-          target: ts.ScriptTarget.ESNext,
-          module: ts.ModuleKind.ESNext,
-          moduleResolution: ts.ModuleResolutionKind.Bundler,
-          strict: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          forceConsistentCasingInFileNames: true
-        }
-      );
+      // Get the current procbase root and load its tsconfig.json
+      const procbaseRoot = getCurrentProcbase();
+      const compilerOptions = loadTsConfig(procbaseRoot);
+
+      // Create a project context using the procbase's tsconfig.json
+      const context = createProjectContext([filePath], compilerOptions);
 
       // Extract symbols from the file
       const sourceFile = context.program.getSourceFile(filePath);
@@ -71,6 +116,10 @@ export const createCodeAnalyzer = (dbPath: string): CodeAnalyzer => {
 
   const analyzeProject = async (projectRoot: string): Promise<{ success: boolean; message: string }> => {
     try {
+      // Get the current procbase root and load its tsconfig.json
+      const procbaseRoot = getCurrentProcbase();
+      const compilerOptions = loadTsConfig(procbaseRoot);
+
       // Find all TypeScript files in the project
       const findTsFiles = (dir: string): string[] => {
         const files: string[] = [];
@@ -90,9 +139,15 @@ export const createCodeAnalyzer = (dbPath: string): CodeAnalyzer => {
 
       const tsFiles = findTsFiles(projectRoot);
       
-      // Analyze each file
+      // Analyze each file using the procbase's tsconfig.json
       for (const file of tsFiles) {
-        await analyzeFile(file);
+        const context = createProjectContext([file], compilerOptions);
+        const sourceFile = context.program.getSourceFile(file);
+        
+        if (sourceFile) {
+          const symbols = extractSymbolsFromFile(sourceFile, context.typeChecker);
+          symbolDB.addSymbols(file, symbols);
+        }
       }
 
       return { 
