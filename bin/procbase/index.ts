@@ -8,6 +8,7 @@ import { showServerStatus } from './status';
 import { startServer } from './server/start';
 import { stopServer } from './server/stop';
 import { restartServer } from './server/restart';
+import { analyzeFileCommand } from './analysis';
 
 const program = new Command();
 
@@ -73,6 +74,14 @@ program
     .description('Show MCP server status')
     .action(() => {
         showServerStatus();
+    });
+
+program
+    .command('analysis')
+    .description('Analyze a TypeScript file and output top-level symbols')
+    .argument('<file>', 'Path to the TypeScript file to analyze')
+    .action((file) => {
+        analyzeFileCommand(file);
     });
 
 const typeCommand = program.command('type').description('Manage types');

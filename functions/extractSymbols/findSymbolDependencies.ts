@@ -107,14 +107,6 @@ const findSymbolDependencies = (
             return;
           }
 
-          // 如果是类型引用，不添加为依赖
-          if (ts.isTypeReferenceNode(node.parent) || 
-              ts.isTypeAliasDeclaration(declaration) || 
-              ts.isInterfaceDeclaration(declaration) ||
-              ts.isClassDeclaration(declaration)) {
-            return;
-          }
-
           dependencies.add(symbolId);
         }
       }
