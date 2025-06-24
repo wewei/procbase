@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { createProcbase } from './create';
 import { deleteProcbase } from './delete';
 import { listProcbases } from './list';
+import { useProcbase } from './use';
 import { startServer } from './server/start';
 import { stopServer } from './server/stop';
 import { restartServer } from './server/restart';
@@ -42,8 +43,7 @@ program
     .description('Use a procbase')
     .argument('<name>', 'Name of the procbase to use')
     .action((name) => {
-        // TODO: Implement switching procbase
-        console.log(`Using procbase: ${name}`);
+        useProcbase(name);
     });
 
 program
