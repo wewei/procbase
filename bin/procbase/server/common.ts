@@ -49,4 +49,17 @@ export const isServerRunning = (): { running: boolean; pid: number | null } => {
     }
   }
   return { running: false, pid: null };
+};
+
+export const getServerStatus = (): ServerStatus | null => {
+  const statusFile = getServerStatusFilePath();
+  if (fs.existsSync(statusFile)) {
+    try {
+      const content = fs.readFileSync(statusFile, 'utf8');
+      return JSON.parse(content) as ServerStatus;
+    } catch (error) {
+      return null;
+    }
+  }
+  return null;
 }; 
