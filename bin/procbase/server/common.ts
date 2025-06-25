@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { getProcbaseRoot } from '../../../common/paths';
+import { startServer } from './start';
 
 type ServerStatus = {
   pid: number;
@@ -62,4 +63,24 @@ export const getServerStatus = (): ServerStatus | null => {
     }
   }
   return null;
+};
+
+/**
+ * Ensures the MCP server is running, starting it if necessary
+ * @returns The port number the server is running on
+ */
+export const ensureServerRunning = (): number => {
+  const serverState = isServerRunning();
+  if (!serverState.running) {
+    console.log('🚀 Starting MCP server...');
+    startServer();
+    // Wait a moment for server to start
+    console.log('⏳ Waiting for server to start...');
+    Bun.sleepSync(2000);
+  }
+  
+  const status = getServerStatus();
+  const port = status?.port || 8192;
+  console.log(`✅ Server is running on port ${port}`);
+  return port;
 }; 
